@@ -1,0 +1,7 @@
+{
+  "name": "dingxiong.github.io",
+  "packageManager": "yarn@4.0.2",
+  "devDependencies": {
+    "husky": "^8.0.3"
+  }
+}

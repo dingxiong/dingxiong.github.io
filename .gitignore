@@ -1,3 +1,29 @@
+# Ignore all
+*
+# Unignore all with extensions
+!*.*
+# Unignore all dirs
+!*/
+
+### Above combination will ignore all files without extension ###
+
+# Unignore husky
+!.husky/*
+
+# Yarn
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+node_modules
+
+# micsdiff
+.DS_Store
+*dsYM
+
 # Bundler cache
 .bundle
 vendor
@@ -9,10 +35,6 @@ _site
 
 # RubyGems
 *.gem
-
-# NPM dependencies
-node_modules
-package-lock.json
 
 # IDE configurations
 .idea
