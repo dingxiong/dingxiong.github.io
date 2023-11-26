@@ -43,3 +43,9 @@ yarn add -D lint-staged
 Add a `lint-staged` block and also, add `yarn lint-staged` in `.husky/pre-commit`.
 
 Node, every time, we need do `nvm use` before commit.
+
+# Add a new post
+
+```
+bundle exec jekyll post "<title>"
+```
