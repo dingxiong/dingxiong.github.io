@@ -12,8 +12,6 @@
   },
   "lint-staged": {
     "*.{js,ts,tsx,jsx,html,json,yaml,css}": "prettier --write",
-    "*.md": [
-      "prettier --write"
-    ]
+    "*.md": "prettier --write"
   }
 }
