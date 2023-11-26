@@ -26,3 +26,10 @@ npm pkg set scripts.prepare="husky install
 yarn prepare
 npx husky add .husky/pre-commit "npm test"
 ```
+
+Install linter and lint-staged
+```
+yarn add -D prettier
+yarn add -D lint-staged
+```
+Add a `lint-staged` block and also, add `npx lint-staged` in `.husky/pre-commit`.
