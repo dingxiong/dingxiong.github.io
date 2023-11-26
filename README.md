@@ -22,4 +22,7 @@ yarn init -2
 Install husky
 ```
 yarn add husky -D
+npm pkg set scripts.prepare="husky install
+yarn prepare
+npx husky add .husky/pre-commit "npm test"
 ```
