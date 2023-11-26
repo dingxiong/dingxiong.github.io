@@ -1,5 +1,5 @@
 ---
-title: Python asyncio
+title: Python asyncio -- 1. AsynGenerator
 date: 2023-11-25 22:47 -0800
 categories: [programming-language, python]
 tags: [asyncio, generator, await, event-loop]
