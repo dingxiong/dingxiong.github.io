@@ -2,12 +2,6 @@
 
 Follow https://github.com/cotes2020/chirpy-starter to get start.
 
-# Local testing
-
-```
-bundle exec jekyll serve
-```
-
 # Add yarn and related tools
 
 Install nvm, node and yarn if not already
@@ -48,4 +42,18 @@ Node, every time, we need do `nvm use` before commit.
 
 ```
 bundle exec jekyll post "<title>"
+```
+
+# Local testing
+
+Run tests
+
+```
+yarn test
+```
+
+Run local server
+
+```
+bundle exec jekyll serve
 ```

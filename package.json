@@ -8,10 +8,15 @@
   },
   "scripts": {
     "prepare": "husky install",
-    "format": "prettier --write '_posts/*'"
+    "format": "prettier --write '_posts/*'",
+    "build": "bundle exec jekyll b",
+    "test": "bundle exec htmlproofer _site --disable-external=true --ignore-urls \"/^http://127.0.0.1/,/^http://0.0.0.0/,/^http://localhost/\""
   },
   "lint-staged": {
     "*.{js,ts,tsx,jsx,html,json,yaml,css}": "prettier --write",
-    "*.md": "prettier --write"
+    "*.md": [
+      "prettier --write",
+      "yarn build && yarn test"
+    ]
   }
 }
