@@ -31,8 +31,9 @@ TODO: read implementation of pydantic
 ## How does `await` work
 
 To see how exactly `await` works. we need to get familiar with the `dis`
-library first. Checkout [dis.md]({% post_url 2023-11-25-dis-module %}). We will use Python 3.11.2 to do some
-experiment. We only take about compilation and execution.
+library first. Checkout [dis.md]({% post_url 2023-11-25-dis-module %}). We will
+use Python 3.11.2 to do some experiment. We only take about compilation and
+execution.
 
 Let's look at an example. It is an async function will calls `await`.
 
@@ -158,7 +159,8 @@ frame chain, so it returns the control. So this loop is an interruptive. It
 just means that next time we enter this loop again, we pick up where we left.
 Wait. When the hell does this loop end? If you read the disassembled code
 carefully. You see that `SEND` is also a potential jump command. Check
-[dis.md]({% post_url 2023-11-25-dis-module %}) to see why it is a "potential jump". The
+[dis.md]({% post_url 2023-11-25-dis-module %}) to see why it is a "potential
+jump". The
 [send implementation](https://github.com/python/cpython/blob/955ba2839bc5875424ae745bfab53e880a9ace49/Python/ceval.c#L2621)
 says if we encounters a `return` statement instead of a `yield` statement, then
 we jump to a location. In our example it is `46 POP_TOP`. At this moment, the

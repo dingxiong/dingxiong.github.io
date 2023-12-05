@@ -1,0 +1,9 @@
+{
+  "printWidth": 79,
+  "singleQuote": true,
+  "proseWrap": "always",
+  "importOrder": ["^react$", "<THIRD_PARTY_MODULES>", "^:", "^[./]"],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+  "importOrderCaseInsensitive": true
+}
