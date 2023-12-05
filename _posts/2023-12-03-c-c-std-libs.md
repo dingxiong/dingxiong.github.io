@@ -2,7 +2,7 @@
 title: C/C++ std libs
 date: 2023-12-03 23:16 -0800
 categories: [programming-language, cpp]
-tags: [compiler, c++, gcc, llvm. glibc]
+tags: [compiler, c++, gcc, llvm. glibc, libstdc++, libc++]
 ---
 
 Recently, I was revisiting the C++ `std::time` function and suddenly get
@@ -36,3 +36,66 @@ and
 [here](https://github.com/gcc-mirror/gcc/blob/88029286c35d3bf65568fea1324d595a15441772/libstdc++-v3/include/bits/vector.tcc#L1197).
 As you can see that files under the `bits` subfolder make up the
 implementation.
+
+## MacOS Libc and glibc
+
+We still haven't answered the question where `std::time_t` is defined. In
+`libc++`, the declaration is
+[here](https://github.com/llvm/llvm-project/blob/ab6d5fa3d0643e68d6ec40d9190f20fb14190ed1/libcxx/include/ctime#L75)
+If I click `go to definition`, then my IDE jumps to file
+`/Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk/usr/include/sys/_types/_time_t.h`
+saying
+
+```
+typedef __darwin_time_t         time_t;
+```
+
+Also, `__darwin_time_t` is defined in another file
+`/Library/Developer/CommandLineTools/SDKs/MacOSX14.0.sdk/usr/include/arm/_types.h`,
+
+```
+typedef long                    __darwin_time_t;        /* time() */
+```
+
+Ah! For my Macbook with an apple chip, the `std::time_t` is just type `long`.
+This type may be different in your laptop because your laptop may have a
+different architecture. So we know `std::time_t` is defined by the operating
+system.
+
+How about `libstdc++`? This is the
+[relevant code](https://github.com/gcc-mirror/gcc/blob/88029286c35d3bf65568fea1324d595a15441772/libstdc++-v3/include/c/ctime#L31-L32)
+
+```cpp
+#pragma GCC system_header
+#include_next <time.h>
+```
+
+`include_next` here means that use the second found `time.h` file, not the one
+in this repo. Basically, it means please include the `time.h` file provided
+operating system. Below is what I found in a Linux docker container.
+
+```bash
+$ cat /usr/include/x86_64-linux-gnu/sys/time.h  | grep time_t
+#include <bits/types/time_t.h>
+
+$ cat /usr/include/x86_64-linux-gnu/bits/types/time_t.h
+typedef __time_t time_t;
+
+
+$ cat /usr/include/x86_64-linux-gnu/bits/types.h | grep __time_t
+__STD_TYPE __TIME_T_TYPE __time_t;      /* Seconds since the Epoch.  */
+
+$ cat /usr/include/x86_64-linux-gnu/bits/typesizes.h | grep __TIME_T_TYPE
+#define __TIME_T_TYPE           __SYSCALL_SLONG_TYPE
+
+$ cat /usr/include/x86_64-linux-gnu/bits/typesizes.h | grep __SLONGWORD_TYPE
+# define __SYSCALL_SLONG_TYPE   __SLONGWORD_TYPE
+
+$ cat /usr/include/x86_64-linux-gnu/bits/types.h | grep __SLONGWORD_TYPE
+#define __SLONGWORD_TYPE        long int
+```
+
+Ah! OK. `std::time_t` is defined as `long int` in Linux.
+
+We have gone so far in finding the definition of `std::time_t`. These are
+defined in
