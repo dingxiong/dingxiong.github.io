@@ -1,7 +1,7 @@
 ---
 title: Kafka binary protocol
 date: 2023-11-26 21:47 -0800
-categories: [kakfa, binary-protocol]
+categories: [kafka, binary-protocol]
 tags: [kafka, nc]
 ---
 
