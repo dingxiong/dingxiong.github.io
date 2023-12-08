@@ -2,7 +2,7 @@
 layout: post
 title: Datadog misc
 date: 2023-12-08 09:56 -0800
-categories: [datadog, misc]
+categories: [datadog]
 tags: [datadog]
 ---
 

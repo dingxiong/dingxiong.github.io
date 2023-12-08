@@ -1,7 +1,7 @@
 ---
 title: Datadog agent
 date: 2023-12-08 09:56 -0800
-categories: [datadog, agent]
+categories: [datadog]
 tags: [datadog]
 ---
 
