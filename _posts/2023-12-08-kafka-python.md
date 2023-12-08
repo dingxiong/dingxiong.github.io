@@ -1,7 +1,7 @@
 ---
 title: Kafka Python
 date: 2023-12-08 09:31 -0800
-categories: [kafka, mics]
+categories: [kafka, misc]
 tags: [kafka, python]
 ---
 
