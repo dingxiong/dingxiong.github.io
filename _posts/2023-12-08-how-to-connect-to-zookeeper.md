@@ -129,7 +129,7 @@ eavesdrop the communication. At the handshake stage, sever needs to present its
 TLS certificate to client to assure client that the message is indeed from this
 server. Optionally, server may also requests client to present its certificate.
 This is called mTLS (mutual TLS). For more info, check out my other post
-[security/tls.md](../security/tls.md).
+[tls]({% post_url 2023-12-08-tls %}).
 
 By default, Zookeeper uses mTLS if TLS is enabled. See this
 [code](https://github.com/apache/zookeeper/blob/df320056140a49423718ee6f0a7c35538281176e/zookeeper-server/src/main/java/org/apache/zookeeper/common/X509Util.java#L129-L141).
