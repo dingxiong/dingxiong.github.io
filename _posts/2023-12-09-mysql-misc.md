@@ -48,22 +48,23 @@ Do not run make install!
 make -j8
 ```
 
-## post installation
+## Post installation
 
 There are
 [a few steps](https://dev.mysql.com/doc/refman/8.0/en/postinstallation.html) to
 follow after a fresh installation.
 
-### Create mysql user and group
+First, create mysql user and group
 
 ```
 $ groupadd mysql
 $ useradd -r -g mysql -s /bin/false mysql
 ```
 
-### Initialize the data directory
+This step can be omitted if the OS is MacOS.
 
-Suppose the build folder is `/code/mysql-server/build`.
+Second, initialize the data directory. Suppose the build folder is
+`/code/mysql-server/build`.
 
 ```
 cd build
@@ -71,15 +72,12 @@ rm -rf data && mkdir data
 bin/mysqld --initialize --user=mysql
 ```
 
-The above command will print a temp root password in console.
-
-### Start server
+The above command will print a temp root password in console.Now are ready to
+start server
 
 ```
 bin/mysqld --user=mysql
 ```
-
-### Change root password
 
 Open another terminal,
 
@@ -93,6 +91,30 @@ Type the temp password and then assign a new root password.
 mysql>  ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';
 ```
 
+One thing I found interesting about MacOS. I already installed mysql using
+homebrew and it is running. I assume the above process will fail because port
+3306 is already used. However, it is not.
+
+```bash
+$ lsof -i tcp:3306
+COMMAND   PID      USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+mysqld  62685 xiongding   21u  IPv6 0x26ae8b92b7c99911      0t0  TCP *:mysql (LISTEN)
+mysqld  96366 xiongding  363u  IPv4 0x26ae8ba13830ee11      0t0  TCP localhost:mysql (LISTEN)
+
+$ ps -ef |grep mysql
+  502 96366 95551   0 Thu10AM ??         9:28.96 /opt/homebrew/opt/mysql/bin/mysqld --basedir=/opt/homebrew/opt/mysql --datadir=/opt/homebrew/var/mysql --plugin-dir=/opt/homebrew/opt/mysql/lib/plugin --log-error=xiong-MacBook-Pro-Zip.local.err --pid-file=xiong-MacBook-Pro-Zip.local.pid
+  502 62685 50179   0 11:14AM ttys009    0:02.80 ./bin/mysqld --user=mysql
+```
+
+You can see that it works because one uses IPv4 and the other uses IPv6. By
+default, Mysql server starts to listen to IPv6. If you want to use a different
+port, then you can do
+
+```bash
+bin/mysqld --user=mysql --port 3307
+bin/mysql -u root -p<password> -P 3307
+```
+
 ### Create example database and tables
 
 ```
@@ -100,7 +122,7 @@ CREATE DATABASE demodb;
 
 USE demodb;
 
-CREATE TABLE test_example_1 (
+CREATE TABLE t1 (
     id bigint NOT NULL,
     last_name varchar(255) NOT NULL,
     first_name varchar(255),
@@ -109,14 +131,14 @@ CREATE TABLE test_example_1 (
     INDEX index_name (first_name, last_name)
 );
 
-insert into test_example_1 (id, last_name, first_name, age) values (1, 'x1', 'y1', 18);
-insert into test_example_1 (id, last_name, first_name, age) values (2, 'x2', 'y2', 18);
+insert into t1 (id, last_name, first_name, age) values (1, 'x1', 'y1', 18);
+insert into t1 (id, last_name, first_name, age) values (2, 'x2', 'y2', 18);
 ```
 
 ## Run in gdb
 
 ```
-gdb --args bin/mysql --user=mysql
+gdb --args bin/mysqld --user=mysql
 (gdb) run&
 ```
 
@@ -126,6 +148,25 @@ connects to the server, gdb will show a message like below
 
 ```
 (gdb) [New Thread 0xffffe067edc0 (LWP 51367)]
+```
+
+## Use debug info
+
+If Mysql is compiled with debug info, then when you connect to it, you see the
+promp contains server version `xx-debug` as below. Also, a configuration
+variable `debug` exists.
+
+```bash
+...
+Server version: 8.2.0-debug Source distribution
+...
+mysql> show variables like 'debug';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| debug         |       |
++---------------+-------+
+1 row in set (0.02 sec)
 ```
 
 # Name conventions
