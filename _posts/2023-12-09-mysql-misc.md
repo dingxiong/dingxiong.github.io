@@ -112,10 +112,23 @@ port, then you can do
 
 ```bash
 bin/mysqld --user=mysql --port 3307
-bin/mysql -u root -p<password> -P 3307
+bin/mysql -u root -ppassword -P 3307
 ```
 
 ### Create example database and tables
+
+Mysql provides sample data for an "employee" database. See
+[doc](https://dev.mysql.com/doc/employee/en/employees-installation.html).
+
+```bash
+cd build
+wget https://github.com/datacharmer/test_db/archive/refs/tags/v1.0.7.zip
+unzip v1.0.7.zip
+cd test_db-1.0.7/
+../bin/mysql -t -u root -ppassword -P 3307 < employees.sql
+```
+
+Also, below is a sample table as well.
 
 ```
 CREATE DATABASE demodb;
@@ -213,11 +226,6 @@ There are a few good posts from Alibaba that explains MDL every well.
 - http://mysql.taobao.org/monthly/2015/11/04/
 
 ## Useful commands
-
-```
-show global variables like '%...%'
-show global status like '%..%'
-```
 
 - [List long running transactions](https://blogs.oracle.com/mysql/post/mysql-80-how-to-display-long-transactions)
 
