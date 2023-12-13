@@ -184,7 +184,10 @@ mysql> show variables like 'debug';
 
 # Name conventions
 
-A lot of files/functions start with `ut_`, which stands for `utility`.
+Prefixes:
+
+- `ut_`: utility
+- `ha_`: handler
 
 # MISC
 
