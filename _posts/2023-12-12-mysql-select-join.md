@@ -43,3 +43,6 @@ Questions:
 
 1. what is the cost? how is it calculated. For const table, it is zero.
    - https://dev.mysql.com/doc/refman/8.0/en/cost-model.html
+   - A few relevant source files:
+     [opt_costconstants.h](https://github.com/mysql/mysql-server/blob/3fa9e4034d4dbdd596ecc25aaf87bb11ec56d5e3/sql/opt_costconstants.h#L201)
+     [opt_costmodel.h](https://github.com/mysql/mysql-server/blob/3fa9e4034d4dbdd596ecc25aaf87bb11ec56d5e3/sql/opt_costmodel.h#L53).

@@ -7,6 +7,11 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2023-12-15 Fri
+
+This is really a nice series about Mysql Internals
+https://www.zhihu.com/column/c_1453135878944567296
+
 ## 2023-12-10 Sun
 
 When I was watching Prof. Andy's CMU class talk
