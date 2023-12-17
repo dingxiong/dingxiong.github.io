@@ -365,7 +365,7 @@ TRACE: {
 
 </details>
 
-### How we get the block
+### How we get the row estimation
 
 ```
 {
@@ -476,3 +476,19 @@ You can see that `io_block_read_cost` is 4x more expensive than
 `memory_block_read_cost`. In our case, Mysql has a fresh reboot, so nothing is
 cached. `page_read_cost(1.0) = io_block_read_cost = 1`. This is how Mysql gets
 the numbers for the `cost` field in the optimizer tracer output.
+
+## Range optimization
+
+A general introduction to this topic:
+[official guide](https://dev.mysql.com/doc/refman/8.0/en/range-optimization.html).
+One thing to note is below sentense
+
+> The optimizer attempts to use additional key parts to determine the interval
+> as long as the comparison operator is =, <=>, or IS NULL. If the operator
+> is >, <, >=, <=, !=, <>, BETWEEN, or LIKE, the optimizer uses it but
+> considers no more key parts.
+
+I did not know this. Previously, I thought Mysql will use as many prefixes as
+possible.
+
+### Skip scan
