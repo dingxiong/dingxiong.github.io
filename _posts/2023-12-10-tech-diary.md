@@ -7,6 +7,12 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2023-12-16 Sat
+
+I need code folding in my blog, and this post
+https://github.com/cotes2020/jekyll-theme-chirpy/issues/436 perfectly solved my
+problem.
+
 ## 2023-12-15 Fri
 
 This is really a nice series about Mysql Internals

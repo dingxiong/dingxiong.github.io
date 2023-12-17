@@ -115,6 +115,9 @@ bin/mysqld --user=mysql --port 3307
 bin/mysql -u root -ppassword -P 3307
 ```
 
+Btw, mysqld does not response to `Ctl-c`, but it responses to SIGQUIT, which is
+`Ctl-\`.
+
 ### Create example database and tables
 
 Mysql provides sample data for an "employee" database. See

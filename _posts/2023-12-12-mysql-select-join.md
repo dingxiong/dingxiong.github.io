@@ -39,13 +39,15 @@ const table: table with zero or one row. See
 Why const table is special? Because const table can be put at the most outside
 order.
 
-Questions:
+### system table
 
-1. what is the cost? how is it calculated. For const table, it is zero.
-   - https://dev.mysql.com/doc/refman/8.0/en/cost-model.html
-   - A few relevant source files:
-     [opt_costconstants.h](https://github.com/mysql/mysql-server/blob/3fa9e4034d4dbdd596ecc25aaf87bb11ec56d5e3/sql/opt_costconstants.h#L201)
-     [opt_costmodel.h](https://github.com/mysql/mysql-server/blob/3fa9e4034d4dbdd596ecc25aaf87bb11ec56d5e3/sql/opt_costmodel.h#L53).
+System tables are tables with exactly one row. See definition
+[here](https://github.com/mysql/mysql-server/blob/83926c7fda58664b649f0731a973ad610985d36e/sql/dd_table_share.cc#L268).
+It, together const table, is used for join optimization. Btw, `max_rows` and
+`min_rows` are specified as table options when creating a table. Also, these
+two options are not hard limit, and according to this
+[post](https://bugs.mysql.com/bug.php?id=94651), it seems these two options are
+legacy options. However, they seem play a role in table partition.
 
 ## Optimizer
 
@@ -72,13 +74,14 @@ The code is not hard to understand. It is essentially a json builder and a
 linked list such that you know the indent level of current trace in the json
 tree.
 
-example
+<details markdown="1">
+<summary>example </summary>
 
 ```sql
 mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
 *************************** 1. row ***************************
-                            QUERY: select * from employees join dept_emp on dept_emp.emp_no = employees.emp_no limit 1
-                            TRACE: {
+QUERY: select * from employees join dept_emp on dept_emp.emp_no = employees.emp_no limit 1
+TRACE: {
   "steps": [
     {
       "join_preparation": {
@@ -166,15 +169,15 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
               {
                 "table": "`employees`",
                 "table_scan": {
-                  "rows": 299379,
-                  "cost": 315.608
+                  "rows": 299423,
+                  "cost": 929
                 }
               },
               {
                 "table": "`dept_emp`",
                 "table_scan": {
                   "rows": 331143,
-                  "cost": 735.488
+                  "cost": 737
                 }
               }
             ]
@@ -194,20 +197,20 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
                       "chosen": false
                     },
                     {
-                      "rows_to_scan": 299379,
+                      "rows_to_scan": 299423,
                       "filtering_effect": [
                       ],
                       "final_filtering_effect": 1,
                       "access_type": "scan",
-                      "resulting_rows": 299379,
-                      "cost": 30253.5,
+                      "resulting_rows": 299423,
+                      "cost": 30871.3,
                       "chosen": true
                     }
                   ]
                 },
                 "condition_filtering_pct": 100,
-                "rows_for_plan": 299379,
-                "cost_for_plan": 30253.5,
+                "rows_for_plan": 299423,
+                "cost_for_plan": 30871.3,
                 "rest_of_plan": [
                   {
                     "plan_prefix": [
@@ -220,7 +223,7 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
                           "access_type": "ref",
                           "index": "PRIMARY",
                           "rows": 1.10555,
-                          "cost": 331863,
+                          "cost": 332526,
                           "chosen": true
                         },
                         {
@@ -232,14 +235,14 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
                           "using_join_cache": true,
                           "buffers_needed": 152,
                           "resulting_rows": 331143,
-                          "cost": 9.91384e+09,
+                          "cost": 9.9153e+09,
                           "chosen": false
                         }
                       ]
                     },
                     "condition_filtering_pct": 100,
-                    "rows_for_plan": 330979,
-                    "cost_for_plan": 362116,
+                    "rows_for_plan": 331028,
+                    "cost_for_plan": 363397,
                     "chosen": true
                   }
                 ]
@@ -263,14 +266,14 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
                       "final_filtering_effect": 1,
                       "access_type": "scan",
                       "resulting_rows": 331143,
-                      "cost": 33849.8,
+                      "cost": 33851.3,
                       "chosen": true
                     }
                   ]
                 },
                 "condition_filtering_pct": 100,
                 "rows_for_plan": 331143,
-                "cost_for_plan": 33849.8,
+                "cost_for_plan": 33851.3,
                 "rest_of_plan": [
                   {
                     "plan_prefix": [
@@ -283,28 +286,28 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
                           "access_type": "eq_ref",
                           "index": "PRIMARY",
                           "rows": 1,
-                          "cost": 145613,
+                          "cost": 364257,
                           "chosen": true,
                           "cause": "clustered_pk_chosen_by_heuristics"
                         },
                         {
-                          "rows_to_scan": 299379,
+                          "rows_to_scan": 299423,
                           "filtering_effect": [
                           ],
                           "final_filtering_effect": 1,
                           "access_type": "scan",
                           "using_join_cache": true,
                           "buffers_needed": 33,
-                          "resulting_rows": 299379,
-                          "cost": 9.91374e+09,
+                          "resulting_rows": 299423,
+                          "cost": 9.91521e+09,
                           "chosen": false
                         }
                       ]
                     },
                     "condition_filtering_pct": 100,
                     "rows_for_plan": 331143,
-                    "cost_for_plan": 179463,
-                    "chosen": true
+                    "cost_for_plan": 398109,
+                    "pruned_by_cost": true
                   }
                 ]
               }
@@ -312,17 +315,17 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
           },
           {
             "attaching_conditions_to_tables": {
-              "original_condition": "(`employees`.`emp_no` = `dept_emp`.`emp_no`)",
+              "original_condition": "(`dept_emp`.`emp_no` = `employees`.`emp_no`)",
               "attached_conditions_computation": [
               ],
               "attached_conditions_summary": [
                 {
-                  "table": "`dept_emp`",
+                  "table": "`employees`",
                   "attached": null
                 },
                 {
-                  "table": "`employees`",
-                  "attached": "(`employees`.`emp_no` = `dept_emp`.`emp_no`)"
+                  "table": "`dept_emp`",
+                  "attached": "(`dept_emp`.`emp_no` = `employees`.`emp_no`)"
                 }
               ]
             }
@@ -330,8 +333,8 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
           {
             "finalizing_table_conditions": [
               {
-                "table": "`employees`",
-                "original_table_condition": "(`employees`.`emp_no` = `dept_emp`.`emp_no`)",
+                "table": "`dept_emp`",
+                "original_table_condition": "(`dept_emp`.`emp_no` = `employees`.`emp_no`)",
                 "final_table_condition   ": null
               }
             ]
@@ -339,10 +342,10 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
           {
             "refine_plan": [
               {
-                "table": "`dept_emp`"
+                "table": "`employees`"
               },
               {
-                "table": "`employees`"
+                "table": "`dept_emp`"
               }
             ]
           }
@@ -359,3 +362,117 @@ mysql> SELECT * FROM information_schema.OPTIMIZER_TRACE \G
   ]
 }
 ```
+
+</details>
+
+### How we get the block
+
+```
+{
+  "rows_estimation": [
+    {
+      "table": "`employees`",
+      "table_scan": {
+        "rows": 299423,
+        "cost": 929
+      }
+    },
+    {
+      "table": "`dept_emp`",
+      "table_scan": {
+        "rows": 331143,
+        "cost": 737
+      }
+    }
+  ]
+},
+
+```
+
+This tracer block is set at
+[here](https://github.com/mysql/mysql-server/blob/2a57e948ca9b238262161ae854119f60c8fd347e/sql/sql_optimizer.cc#L5987).
+Field `rows` comes from `stats.records`. See below.
+
+```
+mysql> SHOW TABLE STATUS like 'employees' \G
+*************************** 1. row ***************************
+           Name: employees
+         Engine: InnoDB
+        Version: 10
+     Row_format: Dynamic
+           Rows: 299379
+ Avg_row_length: 50
+    Data_length: 15220736
+Max_data_length: 0
+   Index_length: 0
+      Data_free: 4194304
+ Auto_increment: NULL
+    Create_time: 2023-12-12 12:16:10
+    Update_time: 2023-12-12 12:16:42
+     Check_time: NULL
+      Collation: utf8mb4_0900_ai_ci
+       Checksum: NULL
+ Create_options:
+        Comment:
+1 row in set (0.01 sec)
+```
+
+The cost part is more complicated. It calls function
+[table_scan_cost](https://github.com/mysql/mysql-server/blob/83926c7fda58664b649f0731a973ad610985d36e/sql/handler.cc#L6081).
+Basically, it is the product of `scan_time()` and `page_read_cost(1.0)`.
+Function `scan_time()` returns the number of pages this table occupies. Note
+this function is a virtual function. InnoDB overwrites the default
+implementation. See
+[code](https://github.com/mysql/mysql-server/blob/c12149baae15a972494a594f3eb9de2f9389a30e/storage/innobase/handler/ha_innodb.cc#L17169).
+It returns `m_prebuilt->table->stat_clustered_index_size;`, i.e.,
+
+```
+mysql> select * from mysql.innodb_table_stats where table_name = 'employees' or table_name = 'dept_emp ';
++---------------+------------+---------------------+--------+----------------------+--------------------------+
+| database_name | table_name | last_update         | n_rows | clustered_index_size | sum_of_other_index_sizes |
++---------------+------------+---------------------+--------+----------------------+--------------------------+
+| employees     | dept_emp   | 2023-12-12 12:18:05 | 331143 |                  737 |                      353 |
+| employees     | employees  | 2023-12-16 22:30:59 | 299423 |                  929 |                        0 |
++---------------+------------+---------------------+--------+----------------------+--------------------------+
+```
+
+Column `clustered_index_size` shows the number of disk pages this table
+occupies. A side note: the row count is duplicated in `innodb_table_stats`
+table and outcome of `show table status`.
+
+Function `page_raed_cost(1.0)` returns the cost of reading one page. It is a
+mix of cost of reading a page from memory and disk. Wait! Let's take a step
+back: cost in what unit? It is unit-less. It is not milliseconds nor other time
+unit. It is just a unit-less number to indicate the relative cost. See more
+details from Mysql
+[cost model](https://dev.mysql.com/doc/refman/8.0/en/cost-model.html). Below is
+what I see in my localhost.
+
+```
+mysql> select * from mysql.server_cost;
++------------------------------+------------+---------------------+---------+---------------+
+| cost_name                    | cost_value | last_update         | comment | default_value |
++------------------------------+------------+---------------------+---------+---------------+
+| disk_temptable_create_cost   |       NULL | 2023-12-12 11:13:50 | NULL    |            20 |
+| disk_temptable_row_cost      |       NULL | 2023-12-12 11:13:50 | NULL    |           0.5 |
+| key_compare_cost             |       NULL | 2023-12-12 11:13:50 | NULL    |          0.05 |
+| memory_temptable_create_cost |       NULL | 2023-12-12 11:13:50 | NULL    |             1 |
+| memory_temptable_row_cost    |       NULL | 2023-12-12 11:13:50 | NULL    |           0.1 |
+| row_evaluate_cost            |       NULL | 2023-12-12 11:13:50 | NULL    |           0.1 |
++------------------------------+------------+---------------------+---------+---------------+
+6 rows in set (0.01 sec)
+
+mysql> select * from mysql.engine_cost;
++-------------+-------------+------------------------+------------+---------------------+---------+---------------+
+| engine_name | device_type | cost_name              | cost_value | last_update         | comment | default_value |
++-------------+-------------+------------------------+------------+---------------------+---------+---------------+
+| default     |           0 | io_block_read_cost     |       NULL | 2023-12-12 11:13:50 | NULL    |             1 |
+| default     |           0 | memory_block_read_cost |       NULL | 2023-12-12 11:13:50 | NULL    |          0.25 |
++-------------+-------------+------------------------+------------+---------------------+---------+---------------+
+2 rows in set (0.01 sec)
+```
+
+You can see that `io_block_read_cost` is 4x more expensive than
+`memory_block_read_cost`. In our case, Mysql has a fresh reboot, so nothing is
+cached. `page_read_cost(1.0) = io_block_read_cost = 1`. This is how Mysql gets
+the numbers for the `cost` field in the optimizer tracer output.
