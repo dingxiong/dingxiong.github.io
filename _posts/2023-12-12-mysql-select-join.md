@@ -477,6 +477,13 @@ You can see that `io_block_read_cost` is 4x more expensive than
 cached. `page_read_cost(1.0) = io_block_read_cost = 1`. This is how Mysql gets
 the numbers for the `cost` field in the optimizer tracer output.
 
+Max number of tables in a join is 61. This is because Mysql uses a unit64 to
+define the table map
+
+```
+using table_map = uint64_t;    // Used for table bits in join.
+```
+
 ## Range optimization
 
 A general introduction to this topic:

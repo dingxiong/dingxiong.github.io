@@ -166,6 +166,19 @@ connects to the server, gdb will show a message like below
 (gdb) [New Thread 0xffffe067edc0 (LWP 51367)]
 ```
 
+## Run in lldb
+
+As of Dec 17 2023, gdb still does not support MacOS Apple chip, so the only
+debugger I can use is lldb.
+
+```bash
+$ lldb -- ./bin/mysqld --user=mysql --port 3307
+(lldb) b sql/sql_optimizer.cc:5875
+Breakpoint 1: where = mysqld`JOIN::estimate_rowcount() + 44 at sql_optimizer.cc:5875:37, address = 0x0000000100a2c4d8
+(lldb) process launch -n
+Process 4071 launched: '/Users/xiongding/code/mysql-server/build/bin/mysqld' (arm64)
+```
+
 ## Use debug info
 
 If Mysql is compiled with debug info, then when you connect to it, you see the
