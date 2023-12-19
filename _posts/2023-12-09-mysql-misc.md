@@ -245,6 +245,122 @@ There are a few good posts from Alibaba that explains MDL every well.
 - http://mysql.taobao.org/monthly/2015/10/02
 - http://mysql.taobao.org/monthly/2015/11/04/
 
+## Data structures
+
+### KEY
+
+Key is just alias for index.
+
+Code:
+https://github.com/mysql/mysql-server/blob/7e1ce704209203da2bde727d5ce8b059d2c07c6c/sql/key.h#L121
+
+```cpp
+class KEY {
+ public:
+  /** Tot length of key */
+  uint key_length{0};
+  /** How many key_parts */
+  uint user_defined_key_parts{0};
+  /** How many key_parts including hidden parts */
+  uint actual_key_parts{0};  //Xiong: This is the total number of fields in this index
+
+  /**
+    Array of AVG(number of records with the same field value) for 1st ... Nth
+    key part. For internally created temporary tables, this member can be
+    nullptr. This is the same information as stored in the above
+    rec_per_key array but using float values instead of integer
+    values. If the storage engine has supplied values in this array,
+    these will be used. Otherwise the value in rec_per_key will be
+    used.  @todo In the next release the rec_per_key array above
+    should be removed and only this should be used.
+  */
+  rec_per_key_t *rec_per_key_float{nullptr};
+  ...
+};
+```
+
+One node about field `rec_per_key_float`. It is an array that contains the
+average number of records with the same index prefix. For our example
+`employee` database, the table `dept_emp` has below definition
+
+```
+| dept_emp | CREATE TABLE `dept_emp` (
+  `emp_no` int NOT NULL,
+  `dept_no` char(4) NOT NULL,
+  `from_date` date NOT NULL,
+  `to_date` date NOT NULL,
+  PRIMARY KEY (`emp_no`,`dept_no`),
+  KEY `dept_no` (`dept_no`),
+  CONSTRAINT `dept_emp_ibfk_1` FOREIGN KEY (`emp_no`) REFERENCES `employees` (`emp_no`) ON DELETE CASCADE,
+  CONSTRAINT `dept_emp_ibfk_2` FOREIGN KEY (`dept_no`) REFERENCES `departments` (`dept_no`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+```
+
+For the primary key, `actual_key_parts = 2`. so `rec_per_key_float` is a
+two-element array. What are their values?
+
+```
+mysql> select * from mysql.innodb_index_stats where table_name = 'dept_emp' and index_name = 'PRIMARY';
++---------------+------------+------------+---------------------+--------------+------------+-------------+-----------------------------------+
+| database_name | table_name | index_name | last_update         | stat_name    | stat_value | sample_size | stat_description                  |
++---------------+------------+------------+---------------------+--------------+------------+-------------+-----------------------------------+
+| employees     | dept_emp   | PRIMARY    | 2023-12-12 12:18:05 | n_diff_pfx01 |     299527 |          20 | emp_no                            |
+| employees     | dept_emp   | PRIMARY    | 2023-12-12 12:18:05 | n_diff_pfx02 |     331143 |          20 | emp_no,dept_no                    |
+| employees     | dept_emp   | PRIMARY    | 2023-12-12 12:18:05 | n_leaf_pages |        731 |        NULL | Number of leaf pages in the index |
+| employees     | dept_emp   | PRIMARY    | 2023-12-12 12:18:05 | size         |        737 |        NULL | Number of pages in the index      |
++---------------+------------+------------+---------------------+--------------+------------+-------------+-----------------------------------+
+4 rows in set (0.02 sec)
+```
+
+Field `n_diff_pfx[num]` refers the approximate number of different values for
+this index with prefix length `num`. In our example, the primary key is
+`(emp_no, dept_no)`, so there are approximate 299527 distinct `emp_no`, and
+331143 distinct `(emp_no, dept_no)`. Also, the approximate total number of
+records in this table is 331143 as well. Therefore
+
+```
+*rec_per_key_float = [299527/331143, 331143/331143] = [1.1055530887032, 1]
+```
+
+Let's check these numbers in debugger
+
+```
+(lldb) p keyinfo->rec_per_key_float[0]
+(rec_per_key_t) 1.10555303
+(lldb) p keyinfo->rec_per_key_float[1]
+(rec_per_key_t) 1
+```
+
+Value of `rec_per_key_float` is populated by the database engine. For InnoDB,
+the relevant code is
+[here](https://github.com/mysql/mysql-server/blob/c12149baae15a972494a594f3eb9de2f9389a30e/storage/innobase/handler/ha_innodb.cc#L17749).
+
+[TABLE_SHARE::keys](https://github.com/mysql/mysql-server/blob/b4523085027726e243f32a6bc855f7115c70c3b0/sql/table.h#L838)
+defines the number of indices this table has.
+[TABLE::key_info](https://github.com/mysql/mysql-server/blob/b4523085027726e243f32a6bc855f7115c70c3b0/sql/table.h#L1489)
+points to the array of indices of this table. Note `TABLE_SHARE` also has a
+field `key_info`, but they are not the same pointer. It is actually
+[copied over](https://github.com/mysql/mysql-server/blob/eb0ec149d1ef371e858d59f5ae3f11da44adc3e3/sql/table.cc#L2825).
+
+And below shows the indices of this table.
+
+```
+(lldb) p keyuse->table_ref->table->key_info[0]->name
+(const char *) 0x00000001213a2cc0 "PRIMARY"
+(lldb) p keyuse->table_ref->table->key_info[1]->name
+(const char *) 0x00000001213a2cc8 "dept_no"
+```
+
+BTW, one thing to note is that the table definition is
+[here](https://github.com/datacharmer/test_db/blob/3c7fa05e04b4c339d91a43b7029a210212d48e6c/employees.sql#L68).
+Mysql automatically created an index `dept_no` for the foreign key constraint
+`dept_emp_ibfk_2`, but not for `dept_emp_ibfk_1` because it smartly knows that
+the primary key covers this index. See
+[this post](https://dba.stackexchange.com/a/274424/254995).
+
+> An index is generated for each FOREIGN KEY definition unless there is already
+> an obviously adequate index in existence.
+
 ## Useful commands
 
 - [List long running transactions](https://blogs.oracle.com/mysql/post/mysql-80-how-to-display-long-transactions)
