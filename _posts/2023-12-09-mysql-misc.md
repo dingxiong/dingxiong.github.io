@@ -151,7 +151,9 @@ insert into t1 (id, last_name, first_name, age) values (1, 'x1', 'y1', 18);
 insert into t1 (id, last_name, first_name, age) values (2, 'x2', 'y2', 18);
 ```
 
-## Run in gdb
+## Debug
+
+### Run in gdb
 
 ```
 gdb --args bin/mysqld --user=mysql
@@ -166,7 +168,7 @@ connects to the server, gdb will show a message like below
 (gdb) [New Thread 0xffffe067edc0 (LWP 51367)]
 ```
 
-## Run in lldb
+### Run in lldb
 
 As of Dec 17 2023, gdb still does not support MacOS Apple chip, so the only
 debugger I can use is lldb.
@@ -179,7 +181,7 @@ Breakpoint 1: where = mysqld`JOIN::estimate_rowcount() + 44 at sql_optimizer.cc:
 Process 4071 launched: '/Users/xiongding/code/mysql-server/build/bin/mysqld' (arm64)
 ```
 
-## Use debug info
+### Use debug info
 
 If Mysql is compiled with debug info, then when you connect to it, you see the
 promp contains server version `xx-debug` as below. Also, a configuration
@@ -198,7 +200,17 @@ mysql> show variables like 'debug';
 1 row in set (0.02 sec)
 ```
 
-# Name conventions
+## Grammar
+
+SQL is a nonregular language, but Mysql has a context-free grammar. See
+[code](https://github.com/mysql/mysql-workbench/blob/6e135fb33942123c57f059139cbd787bea4f3f9b/library/parsers/grammars/MySQLParser.g4#L986).
+
+## MISC
+
+See a lot of `#ifndef UNIV_HOTBACKUP` in the codebase. This flag is never set.
+See more https://jira.mariadb.org/browse/MDEV-11690 .
+
+### Name conventions
 
 Prefixes:
 
@@ -206,12 +218,7 @@ Prefixes:
 - `ha_`: handler
 - `opt_`: optimization
 
-# MISC
-
-See a lot of `#ifndef UNIV_HOTBACKUP` in the codebase. This flag is never set.
-See more https://jira.mariadb.org/browse/MDEV-11690 .
-
-# InnoDB
+## InnoDB
 
 InnoDB source code tree has an interesting structure. Checkout
 [this article](https://planet.mysql.com/entry/?id=17412) for more details.
