@@ -368,6 +368,61 @@ the primary key covers this index. See
 > An index is generated for each FOREIGN KEY definition unless there is already
 > an obviously adequate index in existence.
 
+### Query block
+
+Mysql code base is not easy to read because the mutual reference using
+pointers. For example, `Query_block` and `JOIN` keeps a pointer to each other.
+
+Best reference:
+https://github.com/mysql/mysql-server/blob/eb86b4016060d426858cc09873d12492f1be396e/sql/query_term.h#L125
+
+```
+SELECT * FROM t1
+JOIN t2 on ...
+JOIN (select * from t3) t3t on ..
+WHERE ...
+group by ...
+having ...
+order by ...
+```
+
+```cpp
+class Query_block : public Query_term {
+...
+  bool is_implicitly_grouped() const {
+    return m_agg_func_used && group_list.elements == 0;
+  }
+
+...
+};
+```
+
+Implicitly grouped: select max(emp_no) from employees;
+
+```
+class JOIN {
+  JOIN_TAB *join_tab{nullptr};
+  QEP_TAB *qep_tab{nullptr};
+  JOIN_TAB **best_ref{nullptr};
+};
+```
+
+`join_tab`:
+
+`QEP_shared`
+
+`QEP_shared_owner` seems badly implemented. Using a `shared_ptr` seems way more
+cleaner.
+
+`JOIN_TAB`
+
+`QEP_TAB`
+
+I frequently found that some comments in mysql codebase help me a lot to
+understand its internals. Examples
+
+- https://github.com/mysql/mysql-server/blob/d7255a34e726757df08659e5f295ac72b10a63c8/sql/sql_select.h#L352
+
 ## Useful commands
 
 - [List long running transactions](https://blogs.oracle.com/mysql/post/mysql-80-how-to-display-long-transactions)
