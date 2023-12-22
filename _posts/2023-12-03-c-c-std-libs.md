@@ -2,7 +2,7 @@
 title: C/C++ std libs
 date: 2023-12-03 23:16 -0800
 categories: [programming-language, cpp]
-tags: [compiler, c++, gcc, llvm, glibc, libstdc++, libc++]
+tags: [compiler, cpp, gcc, llvm, glibc, libstdc++, libc++]
 ---
 
 Recently, I was revisiting the C++ `std::time` function and suddenly get

@@ -407,6 +407,9 @@ class JOIN {
 };
 ```
 
+`qep_tab` and `best_ref` go together. See
+[code](https://github.com/mysql/mysql-server/blob/2a57e948ca9b238262161ae854119f60c8fd347e/sql/sql_optimizer.cc#L1321).
+
 `join_tab`:
 
 `QEP_shared`
@@ -422,6 +425,12 @@ I frequently found that some comments in mysql codebase help me a lot to
 understand its internals. Examples
 
 - https://github.com/mysql/mysql-server/blob/d7255a34e726757df08659e5f295ac72b10a63c8/sql/sql_select.h#L352
+
+## TODO:
+
+1. learn details of
+   [dynamic range access](https://dev.mysql.com/blog-archive/dynamic-range-access-and-recent-changes/)
+2. read function `GetTableAccessPath`
 
 ## Useful commands
 
