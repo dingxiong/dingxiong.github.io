@@ -7,6 +7,11 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2023-12-24 Sun
+
+I read a few videos from Prof. Andy. I just feel that the two most difficult
+problems in RDMS are query optimization and concurrency control.
+
 ## 2023-12-16 Sat
 
 I need code folding in my blog, and this post
