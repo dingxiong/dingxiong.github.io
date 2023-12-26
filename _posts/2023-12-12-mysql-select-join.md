@@ -499,3 +499,12 @@ I did not know this. Previously, I thought Mysql will use as many prefixes as
 possible.
 
 ### Skip scan
+
+## Iterator/volcano model
+
+When reading
+[LimitOffsetIterator](https://github.com/mysql/mysql-server/blob/8f01dcc3999617d482c4f58b63f6c9cd58ef3d9f/sql/iterators/composite_iterators.cc#L120)
+code, I feel `limit` means `limit + offset`, which is quite against to my
+intuition. After a few days, I found this
+[function](https://github.com/mysql/mysql-server/blob/9c8a87ac8c2762d6677c133100292fd535f07c65/sql/sql_lex.cc#L3833).
+Ah! It is.
