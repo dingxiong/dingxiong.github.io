@@ -127,3 +127,20 @@ $ tree
 Finally, function
 [init_errmessage](https://github.com/mysql/mysql-server/blob/4cc4db631e9b802a11646ffb814357e9f46761b2/sql/derror.cc#L181)
 load them.
+
+## Update
+
+I just came across this
+[line](https://github.com/mysql/mysql-server/blob/7e1ce704209203da2bde727d5ce8b059d2c07c6c/sql/sql_update.h#L149).
+Basically, it says we can update multiple rows in a single query, such as
+
+```sql
+UPDATE Books, Orders
+SET Orders.Quantity = Orders.Quantity + 2,
+    Books.InStock = Books.InStock - 2
+WHERE
+    Books.BookID = Orders.BookID
+    AND Orders.OrderID = 1002;
+```
+
+Quite amazing!
