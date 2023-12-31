@@ -5,7 +5,7 @@ categories: [database, mysql]
 tags: [mysql]
 ---
 
-There are only two difficult problems in the traditional RDMS domain: query
+There are only two difficult problems in the traditional RDBMS domain: query
 optimization and concurrency control. This blog discuss various aspects of the
 latter in Mysql.
 
@@ -13,6 +13,63 @@ TODOs:
 
 1. read relevant code around
    [acquire_lock](https://github.com/mysql/mysql-server/blob/4cc4db631e9b802a11646ffb814357e9f46761b2/sql/mdl.cc#L3360)
+
+## Isolation levels
+
+The bottom of
+[Wikipedia: Isolation (database systems)](<https://en.wikipedia.org/wiki/Isolation_(database_systems)>)
+has a table showing the relationship between isolation levels and the
+corresponding consistent problems they solve. This part is fairly easy to
+understand and we all know what `dirty read`, `unrepeatable read` and
+`phantom read` mean. However, these are other consistent problems other than
+these three, such as `lost update`.
+
+Lost update is another term for
+[write-write conflict](https://en.wikipedia.org/wiki/Write%E2%80%93write_conflict).
+By the way, `unrepeatable read` is another term for
+[read-write conflict](https://en.wikipedia.org/wiki/Read%E2%80%93write_conflict)
+and `dirty read` is another term for
+[write-read conflict](https://en.wikipedia.org/wiki/Write%E2%80%93read_conflict).
+Alibaba cloud has
+[a blog](https://www.alibabacloud.com/blog/comprehensive-understanding-of-transaction-isolation-levels_596894)
+talking about other consistence issue. Besides `lost update`, there are
+`read skew` and `write skew`.
+[A Critique of ANSI SQL Isolation Levels](https://blog.acolyer.org/2016/02/24/a-critique-of-ansi-sql-isolation-levels/)
+is a must read paper for anyone who is interested in isolation levels. It
+classifies the consistence phenomenon as below.
+
+- P0: dirty write
+- P1: Dirty Read
+- P2: Fuzzy Read (Non-Repeatable Read)
+- P3: Phantom
+- P4: Lost Update
+- P4C: Cursor Lost Update
+- A5A: Read Skew
+- A5B: Write Skew
+
+Note, P0 is dirty write, meaning that a transaction has updated a record but
+has not committed yet, and a second transaction updates the same record. Dirty
+write is different lost update. See the above paper for more explanation.
+
+By the way, all isolation levels, including read uncommitted, prohibit dirty
+write by using a row lock.
+
+Two-phase locking (2PL) is a practical way to solve these consistent problems
+to achieve serializable isolation level, but it comes with a performance
+penalty. That is where `MVCC` comes to rescue. However, `MVCC` only solves the
+read-write and write-read conflicts. `lost update` problem is still possible
+under MVCC. When I first learn about MVCC. I was very confused that MVCC still
+uses locks even though it is advertised as a non-locking concurrency control
+method. After reading the paper above, I understand that no matter what
+concurrency protocol RDBMS implements, it needs row lock to solve the dirty
+write problem. So it is not surprising to see Mysql MVCC source code still use
+locks. There is a
+[stackoverflow post](https://stackoverflow.com/questions/30546187/why-does-mvcc-require-locking-for-dml-statements)
+asking the same question.
+
+Mysql uses MVCC + locks to achieve serializable isolation levels. According to
+the Alibaba blog above, Mysql repeatable read isolation level is vulnerable to
+both phantom read and lost update issues.
 
 ## Transaction
 
