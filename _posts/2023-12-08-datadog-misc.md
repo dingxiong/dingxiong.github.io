@@ -68,6 +68,11 @@ lib, this part is under `profiling` folder.
 Also, note that, for performance consideration, most collectors are written in
 Cython.
 
+One note about how memory profiler is implemented in dd-trace-py. This is the
+[main file](https://github.com/DataDog/dd-trace-py/blob/08cc2b61a11d493e801026ab1e82e678d92cfaad/ddtrace/profiling/collector/_memalloc.c#L432).
+Basically, it provides its own version of malloc and free. This is a good
+example for us to learn how to write a Python extension in pure C.
+
 ## Debug tips
 
 - Each patched application will have an attribute `__datadog_patch`

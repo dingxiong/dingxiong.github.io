@@ -185,6 +185,11 @@ Finally, function
 [init_errmessage](https://github.com/mysql/mysql-server/blob/4cc4db631e9b802a11646ffb814357e9f46761b2/sql/derror.cc#L181)
 load them.
 
+### Some default values
+
+- page size:
+  [16KB](https://github.com/mysql/mysql-server/blob/9782dcbfc805a405cfefcbf1354e802dadfa2b33/storage/innobase/include/univ.i#L315).
+
 ## Update
 
 I just came across this
