@@ -7,6 +7,13 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-1-8 Monday
+
+I read a blog titled "Go: what we go right and what we go wrong" recently and
+the related comments in HN https://news.ycombinator.com/item?id=38872362&p=2.
+The comments are quite insightful. I learned a technical term
+[structural typing](https://en.wikipedia.org/wiki/Structural_type_system#:~:text=In%20structural%20typing%2C%20an%20element,features%20must%20match%20in%20name.).
+
 ## 2023-12-24 Sun
 
 I read a few videos from Prof. Andy. I just feel that the two most difficult
