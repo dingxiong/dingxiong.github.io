@@ -1,7 +1,7 @@
 ---
 title: python celery
 date: 2024-01-08 10:45 -0800
-categories: [python]
+categories: [programming-language, python]
 tags: [celery]
 ---
 
