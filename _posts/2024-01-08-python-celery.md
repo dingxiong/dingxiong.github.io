@@ -289,3 +289,60 @@ line that prints out the details of a specific task. OK, so the I believe, my
 
 Use signals to define hooks that pre/post run of a job, or even configure
 logging format by `set_logging` signal.
+
+## Canvas
+
+### chain
+
+Chain is recursively called at
+[this place](https://github.com/celery/celery/blob/59263b0409e3f02dc16ca8a3bd1e42b5a3eba36d/celery/app/trace.py#L507).
+
+> 1704750305.685808 [0 127.0.0.1:52368] "LPUSH" "celery" "{\"body\":
+> \"W1szMF0sIHt9LCB7ImNhbGxiYWNrcyI6IG51bGwsICJlcnJiYWNrcyI6IG51bGwsICJjaGFpbiI6IFt7InRhc2siOiAidGFza3Muc2xhY2tfdGFza3MuZG9fc2xlZXAiLCAiYXJncyI6IFs2MF0sICJrd2FyZ3MiOiB7fSwgIm9wdGlvbnMiOiB7InRhc2tfaWQiOiAiOTc4OWM3ZTItNzI3NC00ZmEyLWEwZWUtMzU1Y2ZkMjAxMDI3IiwgInJlcGx5X3RvIjogImQxYjk0YTRlLWMyYmUtMzdmZS04NWVjLWY3MDY4YzRlNTI0MCJ9LCAic3VidGFza190eXBlIjogbnVsbCwgImltbXV0YWJsZSI6IGZhbHNlfV0sICJjaG9yZCI6IG51bGx9XQ==\",
+> \"content-encoding\": \"utf-8\", \"content-type\": \"application/json\",
+> \"headers\": {\"lang\": \"py\", \"task\": \"tasks.slack_tasks.do_sleep\",
+> \"id\": \"b8fb8776-9746-45bd-80a6-dd29856c41ad\", \"shadow\": null, \"eta\":
+> null, \"expires\": null, \"group\": null, \"group_index\": null, \"retries\":
+> 0, \"timelimit\": [null, null], \"root_id\":
+> \"b8fb8776-9746-45bd-80a6-dd29856c41ad\", \"parent_id\": null, \"argsrepr\":
+> \"(30,)\", \"kwargsrepr\": \"{}\", \"origin\": \"gen5918@ip-172-30-7-82\",
+> \"ignore_result\": false, \"replaced_task_nesting\": 0, \"stamped_headers\":
+> null, \"stamps\": {}, \"x_request_id\": null}, \"properties\":
+> {\"correlation_id\": \"b8fb8776-9746-45bd-80a6-dd29856c41ad\", \"reply_to\":
+> \"d1b94a4e-c2be-37fe-85ec-f7068c4e5240\", \"\_flask_request_context\": {},
+> \"pre_enqueue_timestamp\": {\"**type**\": \"datetime\", \"**value**\":
+> \"2024-01-08T21:41:08.479523\"}, \"delivery_mode\": 2, \"delivery_info\":
+> {\"exchange\": \"\", \"routing_key\": \"celery\"}, \"priority\": 0,
+> \"body_encoding\": \"base64\", \"delivery_tag\":
+> \"e4fb5546-d496-4d70-a233-6f1a81cb7ff9\"}}"
+
+The body is actually
+
+```bash
+$ echo -n W1szMF0sIHt9LCB7ImNhbGxiYWNrcyI6IG51bGwsICJlcnJiYWNrcyI6IG51bGwsICJjaGFpbiI6IFt7InRhc2siOiAidGFza3Muc2xhY2tfdGFza3MuZG9fc2xlZXAiLCAiYXJncyI6IFs2MF0sICJrd2FyZ3MiOiB7fSwgIm9wdGlvbnMiOiB7InRhc2tfaWQiOiAiOTc4OWM3ZTItNzI3NC00ZmEyLWEwZWUtMzU1Y2ZkMjAxMDI3IiwgInJlcGx5X3RvIjogImQxYjk0YTRlLWMyYmUtMzdmZS04NWVjLWY3MDY4YzRlNTI0MCJ9LCAic3VidGFza190eXBlIjogbnVsbCwgImltbXV0YWJsZSI6IGZhbHNlfV0sICJjaG9yZCI6IG51bGx9XQ== | base64 -d
+
+[[30], {}, {"callbacks": null, "errbacks": null, "chain": [{"task": "tasks.slack_tasks.do_sleep", "args": [60], "kwargs": {}, "options": {"task_id": "9789c7e2-7274-4fa2-a0ee-355cfd201027", "reply_to": "d1b94a4e-c2be-37fe-85ec-f7068c4e5240"}, "subtask_type": null, "immutable": false}], "chord": null}]2024-01-08 13:47:19 (bash) ~
+$ cd code/kombu/
+```
+
+I was wondering how it (de)serializes the messages. I found that signature
+defines a
+[json](https://github.com/celery/celery/blob/ec3714edf37e773ca5372f71f7f4ee5b1b33dd5d/celery/canvas.py#L618)  
+method, but I did not find any PEP introduces this magic method. Then I find
+this
+[line of code](https://github.com/celery/celery/blob/ec3714edf37e773ca5372f71f7f4ee5b1b33dd5d/celery/canvas.py#L618).
+Hmm, it is Celery specific thing. I feel it is bad to name it this way. It will
+confuse users.
+
+#### mutable vs immutable
+
+In a chain, you can choose if the child task uses the result of parent task's
+return value as the first argument or not. This is accomplished by `task.s()`
+and `task.si()` respectively. See
+[code](https://github.com/celery/celery/blob/ec3714edf37e773ca5372f71f7f4ee5b1b33dd5d/celery/canvas.py#L829).
+
+#### exception propagation
+
+If a parent task failed, the child tasks won't be scheduled, but the same
+failure message will be stored in backend store as well. See
+[code](https://github.com/celery/celery/blob/1c4ff33bd22cf94e297bd6449a06b5a30c2c1fbc/celery/backends/base.py#L182).
