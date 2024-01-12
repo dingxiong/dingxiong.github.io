@@ -346,3 +346,35 @@ and `task.si()` respectively. See
 If a parent task failed, the child tasks won't be scheduled, but the same
 failure message will be stored in backend store as well. See
 [code](https://github.com/celery/celery/blob/1c4ff33bd22cf94e297bd6449a06b5a30c2c1fbc/celery/backends/base.py#L182).
+
+## Contributing to Celery
+
+When I try to add a unit test, and get confused by sentence like
+`self.app.conf.result_backend = 'dynamodb://'` in a test class. Where is
+`self.app` defined? Then I read `confest.py` file and find
+
+```
+@pytest.fixture(autouse=True)
+def test_cases_shortcuts(request, app, patching, celery_config):
+    if request.instance:
+        @app.task
+        def add(x, y):
+            return x + y
+
+        # IMPORTANT: We set an .app attribute for every test case class.
+        request.instance.app = app
+        request.instance.Celery = TestApp
+        request.instance.assert_signal_called = assert_signal_called
+        request.instance.task_message_from_sig = task_message_from_sig
+        request.instance.TaskMessage = TaskMessage
+        request.instance.TaskMessage1 = TaskMessage1
+        request.instance.CELERY_TEST_CONFIG = celery_config
+        request.instance.add = add
+        request.instance.patching = patching
+    yield
+    if request.instance:
+        request.instance.app = None
+```
+
+It does not only have `self.app`, but also `self.Celery` and a sample task
+`self.add` as well.
