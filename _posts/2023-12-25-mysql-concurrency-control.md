@@ -9,11 +9,6 @@ There are only two difficult problems in the traditional RDBMS domain: query
 optimization and concurrency control. This blog discuss various aspects of the
 latter in Mysql.
 
-TODOs:
-
-1. read relevant code around
-   [acquire_lock](https://github.com/mysql/mysql-server/blob/4cc4db631e9b802a11646ffb814357e9f46761b2/sql/mdl.cc#L3360)
-
 ## Isolation levels
 
 The bottom of
@@ -71,11 +66,11 @@ Mysql uses MVCC + locks to achieve serializable isolation levels. According to
 the Alibaba blog above, Mysql repeatable read isolation level is vulnerable to
 both phantom read and lost update issues.
 
-### Sorry, where does transaction start?
+### Sorry, when does transaction start?
 
 For a long time, I thought transactions start with a `BEGIN` statement. Yes,
 syntactically correct, but there are some caveat about `repeatable read`
-isolation level. According to Mysql
+isolation level. According to the Mysql
 [official doc](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read),
 
 > Consistent reads within the same transaction read the snapshot established by
@@ -90,7 +85,7 @@ when this ReadView is created but excludes the creator transaction itself. See
 more details in function
 [ReadView::copy_trx_ids](https://github.com/mysql/mysql-server/blob/76a196a0c5df52c2b09b96ccfd9ddb34da95f67e/storage/innobase/read/read0read.cc#L353).
 
-Below is sample backtrace I got when doing the first select in a transaction.
+Below is a sample backtrace I got when doing the first select in a transaction.
 
 ```
 (lldb) bt
@@ -130,18 +125,20 @@ SELECT * from t1 where id = 1 for update;
 COMMIT;
 ```
 
-We do a `select ... for update` every time we start a new transaction. There
-are two implications:
+`select ... for update` follows immediately after `BEGIN`. There are two
+implications:
 
-1. Because the lock associated with `SELECT ... for update` is release after
+1. Because the lock associated with `SELECT ... for update` is released after
    the transaction ends, so all concurrent transactions are actually executed
-   in a sequential order.
+   one by one. Any two transactions have no overlap in the time view.
 2. Because this `SELECT ... for update` is the first read inside the
    transaction, so it establishes the snapshot to use.
 
 Combining #1 and #2, we can conclude that transactions are executed in a
 serializable order, and in this transaction chain, early transaction is visible
-to later transactions.
+to later transactions. Note, #2 is important because if there is a query
+between `BEGIN` and `SELECT ... for update`, then snapshots are not ordered
+serializably.
 
 ## Transaction
 
