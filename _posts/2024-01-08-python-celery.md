@@ -210,6 +210,106 @@ Using redis transport to illustrate the process.
    forked process by calling
    [apply_async](https://billiard.readthedocs.io/en/latest/library/multiprocessing.html#using-a-pool-of-workers).
 
+Some sample trace:
+
+```
+  /home/admin/.pyenv/versions/3.11.3/bin/celery(8)<module>()
+-> sys.exit(main())
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/__main__.py(15)main()
+-> sys.exit(_main())
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/bin/celery.py(236)main()
+-> return celery(auto_envvar_prefix="CELERY")
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/click/core.py(1130)__call__()
+-> return self.main(*args, **kwargs)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/click/core.py(1055)main()
+-> rv = self.invoke(ctx)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/click/core.py(1657)invoke()
+-> return _process_result(sub_ctx.command.invoke(sub_ctx))
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/click/core.py(1404)invoke()
+-> return ctx.invoke(self.callback, **ctx.params)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/click/core.py(760)invoke()
+-> return __callback(*args, **kwargs)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/click/decorators.py(26)new_func()
+-> return f(get_current_context(), *args, **kwargs)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/bin/base.py(134)caller()
+-> return f(ctx, *args, **kwargs)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/bin/worker.py(356)worker()
+-> worker.start()
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/worker.py(202)start()
+-> self.blueprint.start(self)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/bootsteps.py(116)start()
+-> step.start(parent)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/bootsteps.py(365)start()
+-> return self.obj.start()
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/consumer/consumer.py(340)start()
+-> blueprint.start(self)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/bootsteps.py(116)start()
+-> step.start(parent)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/consumer/consumer.py(746)start()
+-> c.loop(*c.loop_args())
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/loops.py(97)asynloop()
+-> next(loop)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/asynchronous/hub.py(373)create_loop()
+-> cb(*cbargs)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/transport/redis.py(1343)on_readable()
+-> self.cycle.on_readable(fileno)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/transport/redis.py(568)on_readable()
+-> chan.handlers[type]()
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/transport/redis.py(973)_brpop_read()
+-> self.connection._deliver(loads(bytes_to_str(item)), dest)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/transport/virtual/base.py(1017)_deliver()
+-> callback(message)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/transport/virtual/base.py(639)_callback()
+-> return callback(message)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/messaging.py(656)_receive_callback()
+-> return on_m(message) if on_m else self.receive(decoded, message)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/consumer/consumer.py(685)on_task_received()
+-> strategy(
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/strategy.py(202)task_message_handler()
+-> return limit_task(req, bucket, 1)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/consumer/consumer.py(317)_limit_task()
+-> return self._schedule_bucket_request(bucket)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/consumer/consumer.py(300)_schedule_bucket_request()
+-> self._limit_move_to_pool(request)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/consumer/consumer.py(289)_limit_move_to_pool()
+-> self.on_task_request(request)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/worker.py(220)_process_task_sem()
+-> return self._quick_acquire(self._process_task, req)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/kombu/asynchronous/semaphore.py(75)acquire()
+-> callback(*partial_args, **partial_kwargs)
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/worker/request.py(754)execute_using_pool()
+-> result = apply_async(
+  /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/celery/concurrency/base.py(153)apply_async()
+-> return self.on_apply(target, args, kwargs,
+> /home/admin/.pyenv/versions/3.11.3/lib/python3.11/site-packages/billiard/pool.py(1496)apply_async()
+```
+
+This trace is obtained from the controller process in a pre-fork model. From
+the stacktrace above, we can see that in `apply_async` function, the worker
+controller process sends `(func, *args, **kwargs, ...)` to a slave process. I
+am familiar with a few IPC mechanism, such as pipe, Unix socket, shared memory,
+and etc. But I am only familiar with communicating data between two processes.
+Here, how does it send the function over?
+
+In a pre-fork model,
+[self.threads = False](https://github.com/celery/billiard/blob/57200e7b5cfa710e6d3a695ecb12506afba465f0/billiard/pool.py#L1523),
+so it calls `self._quick_put`, which is `self._inqueue._writer.send`. If we
+follow the call stack, we can see that `celery/billiard` implements a
+`_SimpleQueue` class which creates a
+[os.pipe()](https://github.com/celery/billiard/blob/57200e7b5cfa710e6d3a695ecb12506afba465f0/billiard/connection.py#L566).
+So data is communicated in byte stream, and it is marshaled using
+[pickle](https://github.com/celery/billiard/blob/57200e7b5cfa710e6d3a695ecb12506afba465f0/billiard/connection.py#L230)!
+
+```
+def send(self, obj):
+    """Send a (picklable) object"""
+    self._check_closed()
+    self._check_writable()
+    self._send_bytes(ForkingPickler.dumps(obj))
+```
+
+Ah! pickle is more than capable of fulfilling this job!
+
 ### How does eta/countdown work?
 
 From above section, we know that tasks with eta will be reserved and executed
