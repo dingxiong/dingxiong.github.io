@@ -173,3 +173,15 @@ folder has the highest precedence. Above check shows that this special rule is
 not allowed for the angle style import. Also, there is a parameter
 `NoCurDirSearch` to disable this behavior. `Includers` here is set to the
 current file's full path.
+
+## IR
+
+When I read paper "The LLVM Instruction Set and Compilation Strategy", I
+surprisingly found that LLVM .o file contains IR code, but not machine code.
+This is quite different from GCC. In GCC, source code is first preprocessed,
+and then compiled to assembly, i.e., .s files. Then this .s file is assemblied
+to .o file, and finally linked by the linker. So this means LLVM's linker can
+potentially do more optimization.
+
+TODO: find some reference on LLVM linker performance. It may be much slower
+than the gcc equivalent.

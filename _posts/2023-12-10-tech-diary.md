@@ -7,6 +7,10 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-1-21 Sunday
+
+Very nice compiler material https://c9x.me/compile/
+
 ## 2024-1-8 Monday
 
 I read a blog titled "Go: what we go right and what we go wrong" recently and
