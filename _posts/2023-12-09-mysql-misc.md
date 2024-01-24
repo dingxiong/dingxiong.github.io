@@ -208,6 +208,21 @@ mysql> show variables like 'debug';
 1 row in set (0.02 sec)
 ```
 
+### Unit tests
+
+Mysql comes with a lot of unit tests. Some of them use gtest framework. For
+example, we can build a test suite as follows,
+
+```
+make merge_small_tests-t -j8
+```
+
+Then run it
+
+```
+./runtime_output_directory/merge_small_tests-t --gtest_filter='VarlenSortTest.FailSort'
+```
+
 ## Grammar
 
 SQL is a nonregular language, but Mysql has a context-free grammar. See
