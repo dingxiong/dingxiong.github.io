@@ -7,6 +7,31 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-1-23 Tuesday
+
+I had bad luck after installing Mysql on macbook. I always get this error
+
+```
+$ mysql -uroot
+ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/tmp/mysql.sock' (2)
+```
+
+I understand I can give it an explicit host `-h 127.0.0.1` to force it to use
+network socket instead of Unix socket, but I want to figure out why. After a
+few trials, I made it work by doing two things
+
+```
+$ sudo rm -rf /opt/homebrew/var/mysql
+$ brew postinstall mysql
+```
+
+This `postinstall` command is new to me. Then I realized that brew formula has
+a
+[post_install](https://github.com/Homebrew/homebrew-core/blob/6ade283c9d13f5fed7aa0e66fdf32c429b309f39/Formula/m/mysql.rb#L135)
+block. Ah!. It needs some initialization work.
+
+TIL.
+
 ## 2024-1-21 Sunday
 
 Very nice compiler material https://c9x.me/compile/
