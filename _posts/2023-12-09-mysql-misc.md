@@ -151,6 +151,14 @@ insert into t1 (id, last_name, first_name, age) values (1, 'x1', 'y1', 18);
 insert into t1 (id, last_name, first_name, age) values (2, 'x2', 'y2', 18);
 ```
 
+### Mount existing database files
+
+You can also mount existing database files as follows,
+
+```bash
+bin/mysqld --user=mysql --port 3307 --datadir=/opt/homebrew/var/mysql
+```
+
 ## Debug
 
 ### Run in gdb
