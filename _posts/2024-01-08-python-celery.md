@@ -478,3 +478,39 @@ def test_cases_shortcuts(request, app, patching, celery_config):
 
 It does not only have `self.app`, but also `self.Celery` and a sample task
 `self.add` as well.
+
+## Mics
+
+**How to query Dynamodb result store**
+
+The current implementation set key to be a string field, but somehow it stores
+byte array in it. So the key looks like below
+
+```
+b'celery-task-meta-17ef5a23-eab9-42d7-afec-3e5e94c58297'
+```
+
+I kind of be fooled by it since no matter how I query dynamodb, it always
+returns empty result. I got it work finally.
+
+```
+$ aws dynamodb --profile=admin get-item --table-name celery-result-backend-next --key '{"id": {"S": "b'\''celery-task-meta-17ef5a23-eab9-42d7-afec-3e5e94c58297'\''"}}'
+{
+    "Item": {
+        "ttl": {
+            "N": "1713750202"
+        },
+        "result": {
+            "B": "eyJzdGF0dXMiOiAiU1VDQ0VTUyIsICJyZXN1bHQiOiBudWxsLCAidHJhY2ViYWNrIjogbnVsbCwgImNoaWxkcmVuIjogW10sICJkYXRlX2RvbmUiOiAiMjAyNC0wMS0yM1QwMTo0MzoyMi4wNDU5NjEiLCAidGFza19pZCI6ICIxN2VmNWEyMy1lYWI5LTQyZDctYWZlYy0zZTVlOTRjNTgyOTcifQ=="
+        },
+        "id": {
+            "S": "b'celery-task-meta-17ef5a23-eab9-42d7-afec-3e5e94c58297'"
+        },
+        "timestamp": {
+            "N": "1705974202.082276"
+        }
+    }
+}
+```
+
+What a quotation trick!
