@@ -483,15 +483,15 @@ It does not only have `self.app`, but also `self.Celery` and a sample task
 
 **How to query Dynamodb result store**
 
-The current implementation set key to be a string field, but somehow it stores
-byte array in it. So the key looks like below
+The current implementation sets key to be a string field, but somehow it stores
+it as a byte array. The key looks like below
 
 ```
 b'celery-task-meta-17ef5a23-eab9-42d7-afec-3e5e94c58297'
 ```
 
-I kind of be fooled by it since no matter how I query dynamodb, it always
-returns empty result. I got it work finally.
+I was fooled by it since no matter how I queried dynamodb, it always returned
+empty result. I got it work finally as blow.
 
 ```
 $ aws dynamodb --profile=admin get-item --table-name celery-result-backend-next --key '{"id": {"S": "b'\''celery-task-meta-17ef5a23-eab9-42d7-afec-3e5e94c58297'\''"}}'
