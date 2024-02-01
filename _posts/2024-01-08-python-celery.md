@@ -390,6 +390,41 @@ line that prints out the details of a specific task. OK, so the I believe, my
 Use signals to define hooks that pre/post run of a job, or even configure
 logging format by `set_logging` signal.
 
+## Result store
+
+The
+[official doc](https://docs.celeryq.dev/en/latest/userguide/tasks.html#ignore-results-you-don-t-want)
+clearly says that the precedence order is the following:
+
+```
+1. Global task_ignore_result
+2. ignore_result option
+3. Task execution option ignore_result
+```
+
+However, when reading the doc, it is quite different.
+[Here](https://github.com/dingxiong/celery/blob/83017cb432a8b60e9aaf33465fca1f3ee234e4e2/celery/backends/base.py#L156)
+is how it decides whether to persist result. It is an `and` operation.
+
+```
+if (store_result and not _is_request_ignore_result(request)):
+```
+
+`store_result` comes from
+[this code](https://github.com/dingxiong/celery/blob/78c06af57ec0bc4afe84bf21289d2c0b50dcb313/celery/app/trace.py#L521),
+which is determined statically from Task class variables (item #2 in the above
+precedence list). `_is_request_ignore_result` checks the run-time request,
+which is item #2 above.
+
+I think the correct way is to something like below
+
+```
+if request contains ignroe_result parameter:
+    use this info from requst object
+else:
+  use store_result passed in.
+```
+
 ## Canvas
 
 ### chain
