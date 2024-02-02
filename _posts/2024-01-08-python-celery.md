@@ -412,9 +412,9 @@ if (store_result and not _is_request_ignore_result(request)):
 
 `store_result` comes from
 [this code](https://github.com/dingxiong/celery/blob/78c06af57ec0bc4afe84bf21289d2c0b50dcb313/celery/app/trace.py#L521),
-which is determined statically from Task class variables (item #2 in the above
-precedence list). `_is_request_ignore_result` checks the run-time request,
-which is item #2 above.
+which is determined from Task variables (item #2 in the above precedence list).
+`_is_request_ignore_result` checks the run-time request, which is item #3
+above.
 
 I think the correct way is to something like below
 
