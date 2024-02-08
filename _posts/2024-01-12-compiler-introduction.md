@@ -32,10 +32,25 @@ Bison's manual has three examples. Just follow them to get started.
 
 ### Static single-assignment form (SSA form)
 
+## Instruction selection
+
+Gabriel's paper
+[Survey on Instruction Selection: An Extensive and Modern Literature Review](https://arxiv.org/abs/1306.4898)
+is an extensive report on the instruction selection techniques. To summarize,
+macro expansion, tree covering and DAG covering are among the most popular ways
+to do instruction selection. LLVM uses DAG covering and chapter 4.3.3 has a
+paragraph talking about it.
+
+On the other hand, I recently find a small compiler backend called
+[QBE](https://github.com/8l/qbe/tree/master). It does instruction selection by
+macro expansion. See
+[arm64/emit.c](https://github.com/8l/qbe/blob/d2075d5e131e181820d8c39ad74322f970d562aa/arm64/emit.c#L43).
+Each operand maps to a instruction macro string with special symbols `%0`,
+`%=`, etc to be filled out later.
+
 ## References
 
 - [A Simple, Possibly Correct LR Parser for C11](https://dl.acm.org/doi/10.1145/3064848)
--
 
 # TODO:
 
