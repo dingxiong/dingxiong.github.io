@@ -27,7 +27,7 @@ according to
 benchmark, `cProfile`'s overhead can be as high as 84%.
 
 There are quite a few Python profilers out there. `cProfile`, `pyinstrument`
-and `py-spy`. In my opinion, for a profiler to be useful, it should has below
+and `py-spy`. In my opinion, for a profiler to be useful, it should have below
 features.
 
 1. Low overhead. Usually statistical profiler has lower overhead than

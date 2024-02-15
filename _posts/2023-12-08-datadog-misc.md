@@ -56,6 +56,17 @@ APM concepts:
 
 Datadog APM has a few components. Below is the summary of each component does.
 
+How does APM send the data to datadog?
+
+There are two ways to send data from a localhost to datadog. One is sending
+requests to datadog server directly. The other approach is through dd agent.
+Initially, I thought both ways should work, so can save the effort of
+installing datadog agent. After reading some `dd-trace` code, I find dd agent
+is the only option. in `dd-trace`, class
+[TraceWriter](https://github.com/DataDog/dd-trace-py/blob/08cc2b61a11d493e801026ab1e82e678d92cfaad/ddtrace/internal/writer/writer.py#L106)
+is responsible for sending data to datadog. If you read the hierarchy of this
+class, you realize that `AgentWriter` is the only option.
+
 ### Continuous profiling
 
 DD continuous profiler is a module to collect system information like CPU
