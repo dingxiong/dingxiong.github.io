@@ -114,3 +114,15 @@ about these jargons.
 
 `read` will read from current offset and advance offset. `pread` takes a
 `offset` parameter and does not change current offset of the file.
+
+## Thread
+
+Let's talk about Linux first. When you search `pthread_create` in glibc repo,
+you will see two implementations. One is under `htl` folder, the other is under
+`nptl` folder. These two names represent LinuxThreads and Native POSIX Thread
+Library respectively. This
+[paper](http://comet.lehman.cuny.edu/jung/cmp426697/NPTL.pdf) is a must read to
+understand why NPTL replaces LinuxThreads.
+
+TODO: a section about futex. so I can fully understand how mutex is
+implemented.
