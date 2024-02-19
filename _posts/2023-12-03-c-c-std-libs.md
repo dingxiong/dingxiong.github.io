@@ -120,3 +120,22 @@ Ah! OK. `std::time_t` is defined as `long int` in Linux. You can find this file
 in the Linux github repo as well.
 
 We have gone so far in finding the definition of `std::time_t`!
+
+## glibc
+
+Compile glibc in Linux is straightforward.
+
+```bash
+git clone git://sourceware.org/git/glibc.git --depth=1
+cd glibc
+mkdir -p build
+cd build
+../configure --prefix /home/admin/code/glibc/build
+bear -- make -j
+cd ..
+ln -s compile
+```
+
+The `bear make` step takes a long time. Be patient!
+
+I failed to cross compile it in Macbook M1.

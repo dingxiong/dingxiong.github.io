@@ -124,5 +124,9 @@ Library respectively. This
 [paper](http://comet.lehman.cuny.edu/jung/cmp426697/NPTL.pdf) is a must read to
 understand why NPTL replaces LinuxThreads.
 
-TODO: a section about futex. so I can fully understand how mutex is
-implemented.
+Difference between fork and clone.
+
+TODO:
+
+1. what is thread stack? where it is and what is inside?
+2. a section about futex. so I can fully understand how mutex is implemented.
