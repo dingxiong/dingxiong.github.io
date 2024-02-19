@@ -133,7 +133,7 @@ cd build
 ../configure --prefix /home/admin/code/glibc/build
 bear -- make -j
 cd ..
-ln -s compile
+ln -s build/compile_commands.json compile_commands.json
 ```
 
 The `bear make` step takes a long time. Be patient!
