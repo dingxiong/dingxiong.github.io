@@ -181,7 +181,20 @@ Ulrich's blog post
 [Thread Numbers and Stacks](https://www.akkadia.org/drepper/thread-number-stacks.html).
 Meanwhile, I personally find
 [this post](https://linuxgazette.net/112/krishnakumar.html) quite enlightening
-as well.
+as well. Let's do a quick calculation. For a x86-64 system, 48 bits can be used
+to address memory and one bit is reserved for the kernel, so the addressable
+memory is 2^47. Now suppose stack size is 8M = 2^23. Then we can have as many
+as 2^(47-23) = 16M threads.
+
+Let's briefly mention golang here. In golang, a lot of goroutines can run in
+the same thread. If the goal is to support as many as 1M goroutines, then the
+stack size of a thread should be at least 1M multiplied by the average function
+frame size. This can be ~1G virtual memory. This is insane and it means we can
+have at most 2^(47 - 30) = 128K threads, which is a big constraint. Golang
+designers implemented a clever idea called "growable stack" to solve this
+problem. Checkout this wonderful take
+[Go scheduler: Implementing language with lightweight concurrency](https://youtu.be/-K11rY57K7k?t=2525&si=fMXHsBGHL0_oRuLj)
+by Dmitry Vyukov.
 
 ### Inter thread communication
 
