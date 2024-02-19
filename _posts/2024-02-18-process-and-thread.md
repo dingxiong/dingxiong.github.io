@@ -169,12 +169,15 @@ stack size                  (kbytes, -s) 10240
 
 Above example shows that the default stack size is 10MB, which is a lot, right?
 Suppose the total memory is 16GB, then we can have at most 1600 threads? No.
-The calculation is way off. The thread's stack size is just the size in the
-virtual memory space. The stack may or may not be mapped to physical memory
-depending on whether the space is used or not. If the stack usage is under a
-page size, for example 64KB, then only one page is allocated in physical
-memory. In reality, there is no problem to run millions of threads in Linux.
-For the stack size calculation, please see Ulrich's blog post
+The calculation is way off. Following the `allocate_stack` function above, you
+will see that glibc uses `mmap` to allocate stack memory. It is definitely not
+`malloc` because `malloc` is used for heap allocation. So the thread's stack
+size is just the size in the virtual memory space. The stack may or may not be
+mapped to physical memory depending on whether the space is used or not. If the
+stack usage is under a page size, for example 64KB, then only one page is
+allocated in physical memory. In reality, there is no problem of running
+millions of threads in Linux. For the stack size calculation, please read
+Ulrich's blog post
 [Thread Numbers and Stacks](https://www.akkadia.org/drepper/thread-number-stacks.html).
 Meanwhile, I personally find
 [this post](https://linuxgazette.net/112/krishnakumar.html) quite enlightening
