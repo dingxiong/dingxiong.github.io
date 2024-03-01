@@ -5,7 +5,7 @@ categories: [programming-language, python]
 tags: [asyncio, generator, await, event-loop]
 ---
 
-# Generator
+## Generator
 
 Follow below peps to understand semantics of generator and async/await. Also,
 see https://asyncio-notes.readthedocs.io/en/latest/asyncio-history.html for the
@@ -28,7 +28,7 @@ history of asyncio. Another good blog is from
 
 TODO: read implementation of pydantic
 
-## How does `await` work
+### How does `await` work
 
 To see how exactly `await` works. we need to get familiar with the `dis`
 library first. Checkout [dis.md]({% post_url 2023-11-25-dis-module %}). We will
@@ -171,7 +171,7 @@ the function `__await__`. This function must be a generator with signature
 `def __await__(self)`. It can has zero or many `yield` statements, and its
 return value will be passed to the left side of the `await` statement.
 
-## How does event loop work
+### How does event loop work
 
 The core part is
 [\_run_once](https://github.com/python/cpython/blob/99da75e770a7108cd046b103ada27cf31427fb0b/Lib/asyncio/base_events.py#L1845)
@@ -180,7 +180,7 @@ and put callbacks for all triggered file descriptor in `self._ready`.
 Meanwhile, some utility functions such as `call_soon` directly puts the
 callback in `self._ready`, so it will be executed in next cycle.
 
-## asyncio.Future and asyncio.Task
+### asyncio.Future and asyncio.Task
 
 We have two futures. One in the concurrent package. One in the asyncio package.
 `asyncio.Future` is awaitable. The `__await__` function is defined as below
@@ -243,7 +243,7 @@ Coroutine runs as a task in the asyncio event loop. Checkout `asyncio.run(co)`
 implementation. It basically wrap this coroutine `co` into a task, and then
 call `run_until_complete`.
 
-## How does `asyncio.gather` work
+### How does `asyncio.gather` work
 
 `asyncio.gather` take a list of coroutines as input and returns a
 `_GatheringFuture` object. You may wonder who calls `set_result` or
@@ -254,7 +254,7 @@ Tasks will be created from the input coroutines usingk
 this callback function, the last finished task will call `outer.set_result` or
 `outer.set_exception`. So you see it is like a latch in multithreading.
 
-## patterns learned from graphql
+### patterns learned from graphql
 
 The `graphql-core-legacy` provides good patterns of using asyncio. For example,
 below executor.
@@ -292,7 +292,7 @@ class AsyncioExecutor(object):
         return result
 ```
 
-# Typing
+## Typing
 
 Async related typing is always fantastic and hard to understand when starting
 working with them. For example, given below code, what is the return type of
@@ -306,7 +306,7 @@ async for x in f():
     print(x)
 ```
 
-## async_generator, typing.AsyncGenerator and collections.abc.AsyncGenerator
+### async_generator, typing.AsyncGenerator and collections.abc.AsyncGenerator
 
 Reading the
 [typing module documentation](https://docs.python.org/3.12/library/typing.html#typing.AsyncGenerator),
@@ -440,3 +440,7 @@ In [136]: typing.AsyncGenerator[int, int, int]
 ---------------------------------------------------------------------------
 TypeError: Too many arguments for typing.AsyncGenerator; actual 3, expected 2
 ```
+
+## ContextVar
+
+https://discuss.python.org/t/back-propagation-of-contextvar-changes-from-worker-threads/15928
