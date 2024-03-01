@@ -18,7 +18,7 @@ Debug Wire Protocol). Basically, when we start the Java program, we add some
 command line arguments to open some socket to allow remote debugger to attach.
 For the case of Kafka Connect, we can enable it by setting the `KAFKA_DEBUG`
 environment variable. See
-[code](https://github.com/apache/kafka/blob/main/bin/kafka-run-class.sh#L245-L245).
+[code](https://github.com/apache/kafka/blob/2.8.1/bin/kafka-run-class.sh#L245-L245).
 
 Then we can use jdb to connect to this process
 
