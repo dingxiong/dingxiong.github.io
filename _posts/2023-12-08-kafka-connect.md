@@ -214,4 +214,14 @@ This topic answers my question what happens when connector crashed. Connector
 should load the last offset from this topic and continue from there. See more
 details about how it is used inside Debezium.
 
-# Transformers
+## Transformers
+
+## Mics
+
+### Useful logs
+
+```
+[Worker-02f381a61f0ac581c] [2023-09-01 06:22:20,097] INFO [database-1-binlogs-v9|task-0] using binlog 'mysql-bin-changelog.346991' at position '4250' and gtid '' (io.debezium.connector.mysql.MySqlSnapshotChangeEventSource:280)
+
+INFO: Connected to evergreen-production-1.c0gaj5h9ndhp.us-east-2.rds.amazonaws.com:3306 at mysql-bin-changelog.391965/10661763 (sid:20, cid:85570953)
+```
