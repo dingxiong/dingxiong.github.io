@@ -10,7 +10,7 @@ tags: [python, aws]
 people probably only interact with the higher level abstraction packages such
 as `boto3` and `aioboto3`.
 
-## How are different services clients implemented?
+## How are different service clients implemented?
 
 AWS has so many service, so its engineers decided to generate service clients
 automatically. The code
@@ -53,7 +53,7 @@ Out[75]: False
 ```
 
 It is not the end of weirdness! For some other functions, the inspection shows
-"expected" result.
+the "expected" result.
 
 ```python
 In [98]: inspect.iscoroutinefunction(x.generate_presigned_url)
@@ -61,5 +61,5 @@ Out[98]: True
 ```
 
 It turns out that `generate_presigned_url` method is explicitly
-defined/overwritten. See
-[code](https://github.com/aio-libs/aiobotocore/blob/e8a3b8e03dbf010ad2cddd751dfdf759a7df0780/aiobotocore/signers.py#L172).
+defined/overwritten
+[here](https://github.com/aio-libs/aiobotocore/blob/e8a3b8e03dbf010ad2cddd751dfdf759a7df0780/aiobotocore/signers.py#L172).
