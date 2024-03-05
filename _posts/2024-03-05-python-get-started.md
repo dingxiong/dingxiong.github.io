@@ -143,6 +143,22 @@ metaclass or class namespace variables.
 
 - https://eli.thegreenplace.net/2012/06/15/under-the-hood-of-python-class-definitions
 
+## pyright
+
+`pyright` is a python language server. It is also a command line tool for type
+check.
+
+In order to make it work with python virtualenv. You need to add below configs.
+
+```
+"venvPath": "/opt/homebrew/Caskroom/miniforge/base/envs/",
+"venv": "website-py3_11_0",
+"extraPaths": ["./gen-py/"],
+```
+
+The `venvPath` config above can be replaced using command line argument
+`-v /opt/homebrew/Caskroom/miniforge/base/envs`.
+
 ## Refs
 
 - https://tenthousandmeters.com/
