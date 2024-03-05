@@ -26,9 +26,21 @@ Gnuicorn uses multiple precess/thread model. The core code about process/thread
 management is in `arbiter.py`. One interesting thing about Gunicorn is that is
 uses `ast` to parse the input WSGI application entry method.
 
-Checkout more about Gunicorn [here](gunicorn.md).
+Gunicorn is a Python web server gateway interface (WSGI) HTTP server that helps
+Python web applications run faster and more securely. It supports multiple
+worker processes, load balancing, graceful restarts, and error handling.
+Gunicorn is widely used and popular among Python developers due to its ease of
+use and scalability.
 
-### Why put Nginx before Gunicorn?
+#### Arbiter
+
+Arbiter is gunicorn's worker controller. It is a good material to learn linux
+programming. It spawns worker process by using `fork` system call. It manages
+child process by using SIGCHLD signal handler and `waitpid` system calls. It
+use PIPE to do IPC (interprocess communication). Also, it handler systemd as
+well, so it can be run inside systemd.
+
+#### Why put Nginx before Gunicorn?
 
 For slow clients cases. See
 https://serverfault.com/questions/220046/why-is-setting-nginx-as-a-reverse-proxy-a-good-idea
@@ -56,24 +68,6 @@ thread too, but Java thread is time slice based.
 ## What is CGI?
 
 TODO
-
-## Gunicorn
-
-Gunicorn is a Python web server gateway interface (WSGI) HTTP server that helps
-Python web applications run faster and more securely. It supports multiple
-worker processes, load balancing, graceful restarts, and error handling.
-Gunicorn is widely used and popular among Python developers due to its ease of
-use and scalability.
-
-## Internal implementations
-
-### Arbiter
-
-Arbiter is gunicorn's worker controller. It is a good material to learn linux
-programming. It spawns worker process by using `fork` system call. It manages
-child process by using SIGCHLD signal handler and `waitpid` system calls. It
-use PIPE to do IPC (interprocess communication). Also, it handler systemd as
-well, so it can be run inside systemd.
 
 ## Flask
 
