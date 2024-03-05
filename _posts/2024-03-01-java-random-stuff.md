@@ -48,3 +48,9 @@ interrupt <thread id>     -- interrupt a thread
 
 It is very similar to gdb. You can set breakpoint, print out thread stack
 trace. And I think it has better support for debugging multi-thread program.
+
+## Cross compilation
+
+`javac` has three options related to cross compilation: `-source`, `-target`
+and `-releaes`. [JEP 247](https://openjdk.org/jeps/247) has concise description
+about their usage.
