@@ -189,5 +189,5 @@ After stating so much about import mechanism in Python, now we know that
 
 ## References
 
-- http://blog.tpleyer.de/posts/2017-04-02-A-closer-look-at-Pythons-import-mechanism.html
-- https://tenthousandmeters.com/blog/python-behind-the-scenes-11-how-the-python-import-system-works/
+- <http://blog.tpleyer.de/posts/2017-04-02-A-closer-look-at-Pythons-import-mechanism.html>
+- <https://tenthousandmeters.com/blog/python-behind-the-scenes-11-how-the-python-import-system-works/>
