@@ -1,8 +1,8 @@
 ---
-title: Python asyncio -- 1. AsynGenerator
+title: Python -- Asyncio
 date: 2023-11-25 22:47 -0800
 categories: [programming-language, python]
-tags: [asyncio, generator, await, event-loop]
+tags: [python, asyncio, generator, await, event-loop]
 ---
 
 ## Generator
@@ -443,4 +443,311 @@ TypeError: Too many arguments for typing.AsyncGenerator; actual 3, expected 2
 
 ## ContextVar
 
-https://discuss.python.org/t/back-propagation-of-contextvar-changes-from-worker-threads/15928
+[PEP 567](https://peps.python.org/pep-0567/) introduced ContextVar in Python
+3.7. The motivation is simple. It provides _asynchronous task local storage_,
+or put it short: _coroutine local storage_, which is what thread-local for
+threads. Let's take a look at a sample program.
+
+```python
+from asyncio import sleep
+import asyncio
+from contextvars import ContextVar
+
+v = ContextVar("v")
+
+async def f1():
+    print("start f1")
+    v.set(10)
+    await sleep(0.1)
+    print(f"finish f1 with v.get() = {v.get()}")
+
+async def f2():
+    print("start f2")
+    v.set(20)
+    await sleep(0.1)
+    print(f"finish f2 with v.get() = {v.get()}")
+
+async def f3():
+    print("start f3")
+    v.set(30)
+    await sleep(0.1)
+    print(f"finish f3 with v.get() = {v.get()}")
+
+async def main():
+    await asyncio.gather(f1(), f2(), f3())
+
+asyncio.run(main())
+```
+
+As expected for a coroutine local storage, the context variable `v` will be 10,
+20 and 30 in function `f1`, `f2`, `f3` respectively even these three functions
+run concurrently and there is no deterministic order on which `v.set()` will
+run first. You won't get this property if you change `v` to a regular global
+variable.
+
+Appearing simple, but the underlying implementation is not trivial.
+
+First, we need to understand how coroutine runs in Python. As said above in the
+event loop section, the core part of an event loop is the `_run_once` function.
+The function harvests ready socket channels and ready timer events, put them in
+the `self._ready` callback queue. What contains inside this queue is handlers
+of type `asyncio.events.Handler`. For each ready event, the
+[Handler.\_run()](https://github.com/python/cpython/blob/99da75e770a7108cd046b103ada27cf31427fb0b/Lib/asyncio/base_events.py#L1922)
+function is invoked.
+
+`Handler` is nothing more than a wrapper of the callback ant its arguments.
+What
+[Handler.\_run](https://github.com/python/cpython/blob/1b2459dc64b1c3eea89312ea9bf422f8d7c75bb2/Lib/asyncio/events.py#L80)
+does is below
+
+```python
+self._context.run(self._callback, *self._args)
+```
+
+It runs the callback in a context. This context is just a `contextvar.Context`.
+The C source code for context_run is
+[here](https://github.com/python/cpython/blob/836b17c9c3ea313e400e58a75f52b63f96e498bb/Python/context.c#L658).
+The pseudocode is
+
+```
+PyContext_Enter()
+run_callback()
+PyContext_Exit()
+```
+
+the `PyContext_Enter` function sets the _thread_local_ variable
+`PyThreadState->context` and increments the `PyThreadState->context_ver` by
+one. The `PyContext_Exit` revert the thread-local context, and increments the
+version by one too. This is the meaty part: coroutine-local storage is
+implemented using a thread-local storage! The thread-local context is linked
+list. When we enter a context, the coroutine context is mounted as a new node
+to this linked list, and represents the current thread-local context. Therefore
+later, when
+[PyContextVar_Get](https://github.com/python/cpython/blob/836b17c9c3ea313e400e58a75f52b63f96e498bb/Python/context.c#L227)
+is invoked, it can get the correct context variables from the thread local
+variable.
+
+How does `PyContext_Set` work then? Before demystifying the mechanism, we need
+to summarize the different concepts encountered so far.
+
+- `contextvar.Context`: a dictionary that contains key-value pairs:
+  `ContextVar` and it value.
+- `contextvar.ContextVar`: the lookup key into the `Context` dictionary.
+
+So the goal of `PyContextVar_Set` is to insert or update this key-value pair.
+Actual code is
+[here](https://github.com/python/cpython/blob/836b17c9c3ea313e400e58a75f52b63f96e498bb/Python/context.c#L746).
+Hmm... `_PyHamt_Assoc`? You can read more material about HAMT
+[here](https://github.com/python/cpython/blob/c771cbe8f9b13d674b74d5f81ab36a5e20febb7d/Python/hamt.c#L27).
+Basically, it is a _Persistent data structure_ that is able to preserve all
+previous versions of this dictionary together with and efficient `O(log N)`
+copy-on-write strategy. This data structure is often used in functional
+programming languages. mkirchner has a nice introduction about the motivation
+in
+[his repo](https://github.com/mkirchner/hamt?tab=readme-ov-file#introduction-1).
+Therefore, `PyContextVar_Get` takes a copy of current context variables, and
+inserts the new key-value pair into this new copy.
+
+One last piece in this puzzle is `copy_context()`. In this above example,
+`asyncio.gather` creates a asyncio task for each coroutine in the argument
+list. See
+[code](https://github.com/python/cpython/blob/981b509784c733c54d47bd4d1ceea34fc7ebcac3/Lib/asyncio/tasks.py#L817)
+and
+[code](https://github.com/python/cpython/blob/981b509784c733c54d47bd4d1ceea34fc7ebcac3/Lib/asyncio/tasks.py#L670).
+Note, the task is created without an explicit `context` argument, so the
+current context will be
+[copied](https://github.com/python/cpython/blob/981b509784c733c54d47bd4d1ceea34fc7ebcac3/Lib/asyncio/tasks.py#L116)
+to this new task.
+[copy_context](https://github.com/python/cpython/blob/836b17c9c3ea313e400e58a75f52b63f96e498bb/Python/context.c#L396)
+is a shadow copy. It creates a new `contextvar.Context` but its internal
+`ContextVar` map points to the old one.
+
+To put everything together, what happens logically in the above example program
+is below:
+
+```
+
+ctx0            ctx1       ctx2      ctx3           ctx1       ctx2      ctx3
+  |         =>   |          |         |        =>    |          |         |       => ...
+  v              v          v         v              v          v         v
+ctx_vars0       ctx_vars0  ctx_vars0 ctx_vars0      ctx_vars1  ctx_vars0 ctx_vars0
+                                                     |
+                                                     v
+                                                    {"v": 10}
+```
+
+I added some debug logs in the source codebase: print after entering a context,
+print before exiting a context, and print after `ContextVar_Set`.
+
+```
+$ git diff
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+modified: Python/context.c
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+@ Python/context.c:14 @
+
+
+#include "clinic/context.c.h"
+#include <stdio.h>
+/*[clinic input]
+module _contextvars
+[clinic start generated code]*/
+@ Python/context.c:131 @ _PyContext_Enter(PyThreadState *ts, PyObject *octx)
+    Py_INCREF(ctx);
+    ts->context = (PyObject *)ctx;
+    ts->context_ver++;
+    printf("enter context ver %llu curr %p %p prev %p %p \n",
+        ts->context_ver,
+        (void*)ts->context,
+        (void*)((PyContext*)ts->context)->ctx_vars,
+        (void*)((PyContext*)ts->context)->ctx_prev,
+        (void*)((PyContext*)ts->context)->ctx_prev->ctx_vars
+    );
+    fflush(stdout);
+
+    return 0;
+}
+@ Python/context.c:173 @ _PyContext_Exit(PyThreadState *ts, PyObject *octx)
+        return -1;
+    }
+
+    printf("exit context %llu %p ...\n", ts->context_ver, (void*)ts->context);
+    fflush(stdout);
+    Py_SETREF(ts->context, (PyObject *)ctx->ctx_prev);
+    ts->context_ver++;
+
+@ Python/context.c:768 @ contextvar_set(PyContextVar *var, PyObject *val)
+    var->var_cached = val;  /* borrow */
+    var->var_cached_tsid = ts->id;
+    var->var_cached_tsver = ts->context_ver;
+    printf("set context var %p ctx %p\n", (void*)var, (void*)ctx);
+    fflush(stdout);
+    return 0;
+}
+```
+
+The output is
+
+```
+$ ./python.exe ~/tmp/test.py
+enter context ver 2 curr 0x10412a930 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 2 0x10412a930 ...
+enter context ver 4 curr 0x10416b350 0x103991ef0 prev 0x103977e30 0x103991ef0
+start f1
+set context var 0x10399dbe0 ctx 0x10416b350
+exit context 4 0x10416b350 ...
+enter context ver 6 curr 0x10416b410 0x103991ef0 prev 0x103977e30 0x103991ef0
+start f2
+set context var 0x10399dbe0 ctx 0x10416b410
+exit context 6 0x10416b410 ...
+enter context ver 8 curr 0x10416b4d0 0x103991ef0 prev 0x103977e30 0x103991ef0
+start f3
+set context var 0x10399dbe0 ctx 0x10416b4d0
+exit context 8 0x10416b4d0 ...
+enter context ver 10 curr 0x10416b710 0x10415f7f0 prev 0x103977e30 0x103991ef0
+exit context 10 0x10416b710 ...
+enter context ver 12 curr 0x10416b890 0x10415f890 prev 0x103977e30 0x103991ef0
+exit context 12 0x10416b890 ...
+enter context ver 14 curr 0x10416b9b0 0x10415f930 prev 0x103977e30 0x103991ef0
+exit context 14 0x10416b9b0 ...
+enter context ver 16 curr 0x10416b350 0x10415f7f0 prev 0x103977e30 0x103991ef0
+finish f1 with v.get() = 10
+exit context 16 0x10416b350 ...
+enter context ver 18 curr 0x10416b410 0x10415f890 prev 0x103977e30 0x103991ef0
+finish f2 with v.get() = 20
+exit context 18 0x10416b410 ...
+enter context ver 20 curr 0x10416b4d0 0x10415f930 prev 0x103977e30 0x103991ef0
+finish f3 with v.get() = 30
+exit context 20 0x10416b4d0 ...
+enter context ver 22 curr 0x10416b3b0 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 22 0x10416b3b0 ...
+enter context ver 24 curr 0x10416b470 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 24 0x10416b470 ...
+enter context ver 26 curr 0x10416b530 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 26 0x10416b530 ...
+enter context ver 28 curr 0x10412a930 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 28 0x10412a930 ...
+enter context ver 30 curr 0x103987110 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 30 0x103987110 ...
+enter context ver 32 curr 0x103987110 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 32 0x103987110 ...
+enter context ver 34 curr 0x10416b350 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 34 0x10416b350 ...
+enter context ver 36 curr 0x103987110 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 36 0x103987110 ...
+enter context ver 38 curr 0x10416b350 0x103991ef0 prev 0x103977e30 0x103991ef0
+exit context 38 0x10416b350 ...
+```
+
+You can see that the three coroutine run concurrently, each code block is
+wrapped inside a `enter-exit` pair. Note that, interleaved patterns such as
+`enter->enter->exit->..` cannot happen because `Handler` is the smallest unit
+to run in the event loop. An `Hanlder` cannot be interrupted in the middle by
+another handler.
+
+### Pitfalls
+
+I made a mistake when designing a tracing like API similar to datadog APM
+tracing. The code is simplified to below program.
+
+```python
+import asyncio
+from contextvars import ContextVar
+
+v = ContextVar("v")
+v.set(10)
+
+async def foo():
+    v.set(20) # change the value
+    async def inner():
+        v.set(10) # change it back
+    await asyncio.create_task(inner())  # this will copy context variables as well.
+    print("final v:", v.get())
+
+asyncio.run(foo())
+```
+
+Basically, I try to revert a change to a context variable in an async function
+with different context. This fails because the inner function runs in a newly
+copied context. Any change it makes only affects this new context.
+
+There are some
+[proposal](https://discuss.python.org/t/back-propagation-of-contextvar-changes-from-worker-threads/15928)
+about propagating changes back to the parent context. I kind of feel this
+request is absurd. Anyway, I solved my problem by copying datadog's design.
+
+```
+import contextvars
+import dataclasses
+from contextlib import contextmanager
+
+@dataclasses.dataclass(slots=True)
+class Data:
+    val: int
+    _parent: "Data" | None = None
+    _finished: bool = False
+
+v = contextvars.ContextVar( "_v", default=Data())
+
+def get_data() -> Data:
+    cur = v.get()
+    while cur._finished and cur._parent:
+        cur = cur._parent
+    v.set(cur)
+    return cur
+
+def enter() -> Data:
+    parent = get_data()
+    r = Data(_parent=parent)
+    v.set(r)
+    return r
+
+def exit() -> None:
+    curr = get_data()
+    curr._finished = True
+    if curr._parent:
+        v.set(curr._parent)
+```
+
+Now. we can use `enter` and `exit` in different context and it will work
+correctly.
