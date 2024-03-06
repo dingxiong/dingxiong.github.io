@@ -6,13 +6,13 @@ categories: [programming-language, python]
 tags: [python]
 ---
 
-## cpython
+## Cpython
 
-### Compile
+### Build
 
 On a 2019 Macbook Pro.
 
-```
+```bash
 MACOSX_DEPLOYMENT_TARGET=10.15 ./configure --with-pydebug
 bear -- make -j -s
 ```
@@ -20,19 +20,45 @@ bear -- make -j -s
 On a 2022 Macbook M1. I have some problem with openssl. So I follow
 [this post](https://bugs.python.org/issue40840) to resolve this issue.
 
-```
+```bash
 ./configure --with-pydebug --with-openssl=$(brew --prefix openssl)
 bear -- make -j -s
 ```
 
 Note, I use `bear` to generated compilation database.
 
-### Gdb debug
+### Run cpython inside gdb
 
-https://hackmd.io/@klouielu/ByMHBMjFe?type=view
+Follow this post <https://hackmd.io/@klouielu/ByMHBMjFe?type=view> to get
+started with using gdb debugging Cpython.
 
-- 1. sudo gdb ./python.exe
-- 2. `set startup-with-shell off`
+- `sudo gdb ./python.exe`
+- `set startup-with-shell off`
+
+## Debug
+
+There are multiple ways to set breakpoints in Python. PEP 553 introduces
+function `breakpoint()`. For older versions, you can do
+
+```python
+import code; code.interact(local={**globals(), **locals()})
+```
+
+or
+
+```python
+import IPython; IPython.embed()
+```
+
+if IPython is installed.
+
+For pytest, you can use below command to automatically drop into ipython shell.
+
+```
+pytest --pdbcls=IPython.terminal.debugger:TerminalPdb
+```
+
+### Attach to a python process
 
 gdb supports python API after gdb-7.0, but it must be configured with
 `--with-python`. We can use `gdb --configuration` to check if python API is
@@ -50,62 +76,13 @@ installs `python3.9-dbg`. It cannot find the python stacktrace as blow:
 Unable to locate python frame
 ```
 
-## conda, conda-forge and miniforge
+Also,
+[pyrasite](https://gist.github.com/dingxiong/637010c102e77d3d6db2a641147d5121)
+is super helpful to attach to a python process as well.
 
-conda is a pacakge manager. While conda-forge is a channel. Conda's default
-channel will charge you in some commercial use cases
+## Python syntax
 
-miniforge-installed conda is the same as Miniconda-installed conda, except that
-it uses the conda-forge channel (and only the conda-forge channel) as the
-default channel.
-
-## debug
-
-- one way
-
-```
-import code; code.interact(local={**globals(), **locals()})
-```
-
-one tip: the native python shell does not print variables nicely. Use pprint if
-it is available `from pprint import pprint as p`. Or, if ipython is available,
-then use below
-
-```
-import IPython; IPython.embed()
-```
-
-- pdb See PEP 553
-
-```
-breakpoint()
-```
-
-- pytest support ipdb
-
-  ```
-  pytest --pdbcls=IPython.terminal.debugger:TerminalPdb
-  ```
-
-- Monkey patch Sometimes, you want to add more logs to 3rd party library. The
-  easiest way is to find the logging level switch for this library to output
-  debug logs. However, in cases debug log is not enough and you need to add
-  more customized logs, you can use Inheritance or monkey patch. I personally
-  find monkey patch is faster in a tryout stage.
-
-- Attach to PID See
-  [pyrasite](https://pyrasite.readthedocs.io/en/latest/Shell.html)
-
-## Typing
-
-A trick to get correct subclass type in the base class is `Generic[T]`.
-
-## name mangling
-
-Check
-[this](https://stackoverflow.com/questions/62599884/werkzeugs-localproxy-local-where-is-it-initialized)
-
-## class
+### Class
 
 [Python grammar](https://docs.python.org/3/reference/grammar.html) has class
 definition as
@@ -139,11 +116,14 @@ function
 Basically, `B` and `C` should be subclasses. `k1` and `k2` could define
 metaclass or class namespace variables.
 
-### Reference
+### Name mangling
 
-- https://eli.thegreenplace.net/2012/06/15/under-the-hood-of-python-class-definitions
+Check out
+[this](https://stackoverflow.com/questions/62599884/werkzeugs-localproxy-local-where-is-it-initialized)
 
-## pyright
+## Tools
+
+### pyright
 
 `pyright` is a python language server. It is also a command line tool for type
 check.
@@ -159,6 +139,17 @@ In order to make it work with python virtualenv. You need to add below configs.
 The `venvPath` config above can be replaced using command line argument
 `-v /opt/homebrew/Caskroom/miniforge/base/envs`.
 
+## Misc
+
+### conda, conda-forge and miniforge
+
+conda is a pacakge manager. While conda-forge is a channel. Conda's default
+channel will charge you in some commercial use cases
+
+miniforge-installed conda is the same as Miniconda-installed conda, except that
+it uses the conda-forge channel (and only the conda-forge channel) as the
+default channel.
+
 ## Refs
 
-- https://tenthousandmeters.com/
+- <https://tenthousandmeters.com/>
