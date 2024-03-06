@@ -177,7 +177,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
 
 You can see that basically, it uses `__import__` method and assigned it to
 variable `import_func`. Then it compares it with `tstate->interp->import_func`.
-In [Registration](##Registration) section, we see that `interp->import_func` is
+In [Registration](#registration) section, we see that `interp->import_func` is
 assigned to `__import__`, then it seems that this comparison should always be
 true. But user may install import hooks, or even override `__import__`
 function. (TODO: verify this statement).
