@@ -99,10 +99,10 @@ builtin___import__
 So finally, it calls `_find_and_load` method in `Lib/importlib/_bootstrap.py`.
 How? How could C code call a python file? As said in the **Bootstrap** section,
 this python file is compiled to byte code and saved in a C file. See below
-[Initialization](##Initialization) section to understand how Python loads this
+[Initialization](#Initialization) section to understand how Python loads this
 byte code when interpreter starts. Note, registration happens before below
-[Initialization](##Initialization) step. But it does not hurt because it is
-just registration. `__import__` is not called yet.
+[Initialization](#Initialization) step. But it does not hurt because it is just
+registration. `__import__` is not called yet.
 
 Also, in above call stack, Python will transform relative import path or
 absolute import path, and takes different strategies for syntax `import a.b.c`
