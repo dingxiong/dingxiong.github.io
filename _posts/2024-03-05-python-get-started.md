@@ -35,6 +35,12 @@ started with using gdb debugging Cpython.
 - `sudo gdb ./python.exe`
 - `set startup-with-shell off`
 
+GDB is not available in Macbook M1, so I use lldb instead.
+
+```bash
+lldb -- ./python.exe ~/tmp/test.py
+```
+
 ## Debug
 
 There are multiple ways to set breakpoints in Python. PEP 553 introduces
