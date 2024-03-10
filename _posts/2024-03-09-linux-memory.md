@@ -24,65 +24,72 @@ space, and heap allocations in user-space programs. `mmap` has a flag
 parameter. One of the flags is `MAP_ANONYMOUS`. `malloc` calls `mmap` with this
 flag to allocate Anonymous memory pages.
 
+What is heap? TODO: detailed code study: malloc -> mmap
+
+There are many tools to obtain memory information of a process in Linux. One is
+`/proc/$pid/status`. See below example output.
+
 ```
 # cat /proc/1/status
-Name:   fab
-Umask:  0022
-State:  S (sleeping)
-Tgid:   1
-Ngid:   0
-Pid:    1
-PPid:   0
-TracerPid:      0
-Uid:    0       0       0       0
-Gid:    0       0       0       0
-FDSize: 64
-Groups:
-NStgid: 1
-NSpid:  1
-NSpgid: 1
-NSsid:  1
-VmPeak:  2687036 kB
-VmSize:  2653984 kB
+...
+VmPeak:  2658284 kB
+VmSize:  2658284 kB
 VmLck:         0 kB
 VmPin:         0 kB
-VmHWM:    670888 kB
-VmRSS:    670888 kB
-RssAnon:          609640 kB
-RssFile:           60648 kB
+VmHWM:    676124 kB
+VmRSS:    676124 kB
+RssAnon:          614340 kB
+RssFile:           61184 kB
 RssShmem:            600 kB
-VmData:  1125580 kB
+VmData:  1129960 kB
 VmStk:       156 kB
 VmExe:         8 kB
 VmLib:    130520 kB
-VmPTE:      1732 kB
+VmPTE:      1748 kB
 VmSwap:        0 kB
 HugetlbPages:          0 kB
-CoreDumping:    0
-THP_enabled:    1
-Threads:        28
-SigQ:   0/30446
-SigPnd: 0000000000000000
-ShdPnd: 0000000000000000
-SigBlk: 0000000000000000
-SigIgn: 0000000001001000
-SigCgt: 0000000180004203
-CapInh: 0000000000000000
-CapPrm: 00000000a80425fb
-CapEff: 00000000a80425fb
-CapBnd: 00000000a80425fb
-CapAmb: 0000000000000000
-NoNewPrivs:     0
-Seccomp:        0
-Speculation_Store_Bypass:       vulnerable
-Cpus_allowed:   ff
-Cpus_allowed_list:      0-7
-Mems_allowed:   00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001
-Mems_allowed_list:      0
-voluntary_ctxt_switches:        306651
-nonvoluntary_ctxt_switches:     9989
+...
 ```
 
-2. Explanation of /proc/$pid/status
-3. Interpretation of /pro/$pid/maps
+The meaning of key names is manifest with one exception: `VmHWM` means
+hight-water RSS usage, i.e., peak RSS. Also, not
+`VmRSS = RssAnon + RssFile + RssShmem`. See
+[source code](https://github.com/torvalds/linux/blob/005f6f34bd47eaa61d939a2727fc648e687b84c1/fs/proc/task_mmu.c#L64)
+for where these numbers are from.
+
+Another tool is `/proc/$pid/maps` or the `pmap` command.
+
+```
+# pmap -x 1 | head
+Address           Kbytes     RSS   Dirty Mode  Mapping
+0000563d95331000       4       4       0 r---- python3.11
+0000563d95332000       4       4       0 r-x-- python3.11
+0000563d95333000       4       0       0 r---- python3.11
+0000563d95334000       4       4       4 r---- python3.11
+0000563d95335000       4       4       4 rw--- python3.11
+0000563d96c91000  161648  161612  161612 rw---   [ anon ]
+00007f56cc000000     484     484     484 rw---   [ anon ]
+00007f56cc079000   65052       0       0 -----   [ anon ]
+```
+
+`pmap` shows the start address, the virtual memory size (Kbytes), RSS size,
+etc. We can sum up the anonymous page size in the output:
+
+```
+# pmap -x 1 | grep anon | awk '{s+=$3} END {print s}'
+608380
+```
+
+You notice that the sum of `pmap` output is slightly different from
+`/proc/$pid/status`. This is because the latter is just an approximation.
+Quoted from [man proc](https://man7.org/linux/man-pages/man5/proc.5.html):
+
+> Resident Set Size: number of pages the process has in real memory. This is
+> just the pages which count toward text, data, or stack space. This does not
+> include pages which have not been demand-loaded in, or which are swapped out.
+> This value is inaccurate; see /proc/pid/statm below.
+
+Third tool is `/proc/$pid/smaps`. This is just a detailed version of
+`/proc/$pid/maps`.
+
 4. How does OOM killer work?
