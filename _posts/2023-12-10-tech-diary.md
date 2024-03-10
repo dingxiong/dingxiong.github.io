@@ -7,6 +7,11 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-03-07 Thursday
+
+A terrible learning about k8s
+https://github.com/kubernetes/kubernetes/issues/43916
+
 ## 2024-1-23 Tuesday
 
 I had bad luck after installing Mysql on macbook. I always get this error
