@@ -90,6 +90,36 @@ Quoted from [man proc](https://man7.org/linux/man-pages/man5/proc.5.html):
 > This value is inaccurate; see /proc/pid/statm below.
 
 Third tool is `/proc/$pid/smaps`. This is just a detailed version of
-`/proc/$pid/maps`.
+`/proc/$pid/maps`. Example output of `/proc/$pid/smpas` is
+
+```
+...
+7f8a99522000-7f8a99677000 r-xp 00026000 103:01 153103435                 /usr/lib/x86_64-linux-gnu/libc.so.6
+Size:               1364 kB
+KernelPageSize:        4 kB
+MMUPageSize:           4 kB
+Rss:                 536 kB
+Pss:                 205 kB
+Shared_Clean:        468 kB
+Shared_Dirty:          0 kB
+Private_Clean:        68 kB
+Private_Dirty:         0 kB
+Referenced:          536 kB
+Anonymous:             0 kB
+--
+Swap:                  0 kB
+SwapPss:               0 kB
+Locked:                0 kB
+THPeligible:            0
+ProtectionKey:         0
+VmFlags: rd mr mw me sd
+...
+```
+
+One interesting field is `Pss` (Proportional Set Size). It is used to determine
+the amount of memory that is actually being used by a process, taking into
+account the shared memory that may be used by multiple processes. PSS is
+calculated by dividing the shared memory by the number of processes sharing
+that memory and adding it to the private memory (memory that is not shared).
 
 4. How does OOM killer work?

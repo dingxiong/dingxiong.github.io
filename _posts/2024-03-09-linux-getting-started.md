@@ -17,9 +17,15 @@ cd ~/code/linux
 sudo apt-get install flex libelf-dev bc bear liblz4-tool
 
 # Disable certificates
-
 scripts/config --disable SYSTEM_TRUSTED_KEYS
 scripts/config --disable SYSTEM_REVOCATION_KEYS
+
+# enable cgroup
+scripts/config --enable CONFIG_CGROUPS
+scripts/config --enable CONFIG_RESOURCE_COUNTERS
+scripts/config --enable CONFIG_MEMCG
+scripts/config --enable CONFIG_MEMCG_SWAP
+scripts/config --enable CONFIG_MEMCG_KMEM
 
 # unselect all options
 make menuconfig
