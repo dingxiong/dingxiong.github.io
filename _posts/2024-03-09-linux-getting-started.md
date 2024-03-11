@@ -11,16 +11,18 @@ compilation database, I decided to build it in a Linux box, and then copy the
 the file `compile_commands.json` out.
 
 ```bash
+cd ~/code/linux
+
 # install dependencies
 sudo apt-get install flex libelf-dev bc bear liblz4-tool
 
 # Disable certificates
+
 scripts/config --disable SYSTEM_TRUSTED_KEYS
 scripts/config --disable SYSTEM_REVOCATION_KEYS
 
 # unselect all options
 make menuconfig
-
 
 # build
 bear -- make -j4
