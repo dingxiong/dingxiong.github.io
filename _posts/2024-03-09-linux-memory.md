@@ -122,4 +122,30 @@ account the shared memory that may be used by multiple processes. PSS is
 calculated by dividing the shared memory by the number of processes sharing
 that memory and adding it to the private memory (memory that is not shared).
 
-4. How does OOM killer work?
+### OOM killer
+
+Most OOM logic resides inside `oom_killer.c`. The entry point is function
+[out_of_memory](https://github.com/torvalds/linux/blob/005f6f34bd47eaa61d939a2727fc648e687b84c1/mm/oom_kill.c#L1104)
+The call stack to OOM is
+
+```
+__alloc_pages
+    |-->__alloc_pages_nodemask
+       |--> __alloc_pages_slowpath
+           |--> __alloc_pages_may_oom
+              | --> out_of_memory
+```
+
+OOM killer deals with two different cases: normal Linux processes and Linux
+cgroups. If a namespace is about to violate its memory limitation, OOM killer
+will pick one process in the cgroup to kill.
+
+In practice, I found this
+[log](https://github.com/torvalds/linux/blob/005f6f34bd47eaa61d939a2727fc648e687b84c1/mm/oom_kill.c#L946)
+most useful when reading syslogs. One example below
+
+```
+Memory cgroup out of memory: Killed process 19513 (fab) total-vm:7196300kB, anon-rss:4173736kB, file-rss:58444kB, shmem-rss:600kB, UID:0 pgtables:8824kB oom_score_adj:904
+```
+
+TODO: figure out the code path: malloc -> sys_brk -> \_\_alloc_pages
