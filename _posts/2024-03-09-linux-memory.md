@@ -148,4 +148,12 @@ most useful when reading syslogs. One example below
 Memory cgroup out of memory: Killed process 19513 (fab) total-vm:7196300kB, anon-rss:4173736kB, file-rss:58444kB, shmem-rss:600kB, UID:0 pgtables:8824kB oom_score_adj:904
 ```
 
+One side note about logs from containerd. The logs come from
+[code](https://github.com/containerd/containerd/blob/9fc0b64bc40b0a92bae192737869131c978898df/internal/cri/server/events.go#L310).
+One example below.
+
+```
+TaskOOM event &TaskOOM{ContainerID:a38973e2086019e6411254a3b9e2b8885929f005f4c814414739227673df7e56,XXX_unrecognized:[],}
+```
+
 TODO: figure out the code path: malloc -> sys_brk -> \_\_alloc_pages
