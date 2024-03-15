@@ -200,7 +200,7 @@ Using above example, let's analyze different cases.
   `tp->tp_getattro != PyObject_GenericGetAttr` holds. So we end up with his
   case
 
-  ```
+  ```python
   if (tp->tp_getattro != PyObject_GenericGetAttr || !PyUnicode_CheckExact(name)) {
       *method = PyObject_GetAttr(obj, name);
       return 0;
@@ -212,46 +212,37 @@ Let's make some change to above code
 ```
 def foo(x):
     print(x)
-
 class A:
     f = staticmethod(foo)
 ```
 
-- Case: `A().f(5)` Similar to the non-static case, we get the function object
-  `descr`, but this time it does not have flag `Py_TPFLAGS_METHOD_DESCRIPTOR`.
-  So it get to line `f = Py_TYPE(descr)->tp_descr_get;`. staticmethod is also a
-  descriptor! Th definition is
+- Case: `A().f(5)`
+
+  Similar to the non-static case, we get the function object `descr`, but this
+  time it does not have flag `Py_TPFLAGS_METHOD_DESCRIPTOR`. So it get to line
+  `f = Py_TYPE(descr)->tp_descr_get;`. staticmethod is also a descriptor! Th
+  definition is
   [here](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/funcobject.c#L1213).
+  Finally, it ends up at below case.
 
-A.f(5): label a => PyObject_GetAttr returns a function, same as section
-"Function lookup". A().f(5): label b => the property exits, but it is not data
-property.
+  ```python
+  if (f != NULL) {
+      *method = f(descr, obj, (PyObject *)Py_TYPE(obj)); // label c
+      Py_DECREF(descr);
+      return 0;
+  }
+  ```
 
-staticmethod A.f(5): label a A().f(5): label c =>
+- Case: `A.f(5)`
 
-```
-A.f(5)
----------------
-```
+  This is the exact same as the non-static case.
 
-The core part is the
+There are so many details above. To sum up in one sentence: cpython correctly
+detects whether a function is a bound method or not.
 
-case
-
-https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/object.c#L1173
-
-```
-def foo(x):
-    print(x)
-
-class A:
-    f = foo
-
-
-A.f = staticmethod(foo)
-A().f(5)
-```
-
-https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/object.c#L1226
-
-Both classmethod and staticmethod are descriptors.
+Also, one more note about `staticmethod`. Its `tp_descr_get` function is
+defined
+[here](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/funcobject.c#L1089).
+Other than a function, it always return a pure function. Also, no matter it is
+called from `A` or `A()`, it is always detected as non-bound function. On the
+contrary, `classmethod`'s `tp_descr_get` always returns a bound method.
