@@ -21,11 +21,13 @@ On a 2022 Macbook M1. I have some problem with openssl. So I follow
 [this post](https://bugs.python.org/issue40840) to resolve this issue.
 
 ```bash
-./configure --with-pydebug --with-openssl=$(brew --prefix openssl)
+CFLAGS="-O0" ./configure --with-pydebug --with-openssl=$(brew --prefix openssl)
 bear -- make -j -s
 ```
 
-I use `bear` to generated compilation database. Note, only use `bear` for the
+I explicitly specified `-O0` to disable optimization because I found
+`--with-pydebug` only enables debugging but does not disable optimization. I
+use `bear` to generated compilation database. Note, only use `bear` for the
 initial build. For incremental build, `bear` will replace everything inside the
 compilation database with the only incremental result. So just do `make` for
 incremental build.
