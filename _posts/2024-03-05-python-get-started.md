@@ -46,6 +46,18 @@ GDB is not available in Macbook M1, so I use lldb instead.
 lldb -- ./python.exe ~/tmp/test.py
 ```
 
+When using the script feature of lldb, we need to know which version of python
+it links to.
+
+```
+$ otool -L /Applications/Xcode.app//Contents/SharedFrameworks/LLDB.framework/LLDB | grep -i pytho
+        @rpath/Python3.framework/Versions/3.9/Python3 (compatibility version 3.9.0, current version 3.9.0)
+        @rpath/Python3.framework/Versions/3.9/Python3 (compatibility version 3.9.0, current version 3.9.0)
+```
+
+This means that it links to the system version installed by Xcode. To install
+the package `cpython-lldb`, we should do
+
 TODO:
 
 1. how to print a variable's **dict**

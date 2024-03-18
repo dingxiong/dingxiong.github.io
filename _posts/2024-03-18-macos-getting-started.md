@@ -78,9 +78,9 @@ $ nm /usr/bin/python3
                  U _xcselect_invoke_xcrun
 ```
 
-Just to point out symbol `_shim_maker` and `_xcselect_invoke_xcrun`. I do not
-have access to the source code of these functions, but I can guess what they
-do.
+Just want to point out symbol `_shim_maker` and `_xcselect_invoke_xcrun`. I do
+not have access to the source code of these functions, but I can guess what
+they do.
 
 > xcrun is a command-line tool on macOS that provides a way to locate or run
 > other tools and utilities that are stored within the Xcode toolchain.
