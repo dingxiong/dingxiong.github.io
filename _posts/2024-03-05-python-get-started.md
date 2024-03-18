@@ -46,6 +46,12 @@ GDB is not available in Macbook M1, so I use lldb instead.
 lldb -- ./python.exe ~/tmp/test.py
 ```
 
+TODO:
+
+1. how to print a variable's **dict**
+2. how to print a variable's type
+3. printout common data structures: dict, set, list, number, string
+
 ## Debug
 
 There are multiple ways to set breakpoints in Python. PEP 553 introduces
