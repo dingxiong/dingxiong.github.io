@@ -46,8 +46,11 @@ GDB is not available in Macbook M1, so I use lldb instead.
 lldb -- ./python.exe ~/tmp/test.py
 ```
 
-When using the script feature of lldb, we need to know which version of python
-it links to.
+I tried to use the `cpython-lldb` package, but I do not think it works for the
+latest version of Cpython as I encountered wired behavior when printing
+dictionaries. If you want to try it out, you need to get familiar with the
+script feature of lldb. First, we need to know which version of python it links
+to.
 
 ```
 $ otool -L /Applications/Xcode.app//Contents/SharedFrameworks/LLDB.framework/LLDB | grep -i pytho
@@ -55,14 +58,53 @@ $ otool -L /Applications/Xcode.app//Contents/SharedFrameworks/LLDB.framework/LLD
         @rpath/Python3.framework/Versions/3.9/Python3 (compatibility version 3.9.0, current version 3.9.0)
 ```
 
-This means that it links to the system version installed by Xcode. To install
-the package `cpython-lldb`, we should do
+We cannot use a different version of python.
 
-TODO:
+However, I realize that I do not need to get into the python script in most
+cases. The `expr` command is powerful enough to inspect the local state.
 
-1. how to print a variable's **dict**
-2. how to print a variable's type
-3. printout common data structures: dict, set, list, number, string
+The example python code to debug is
+
+```python
+class A:
+    def __init__(self, x = 5, y = 10):
+        self.x = x
+        self.y = y
+
+    def foo(self):
+        print(self.x)
+
+    def __repr__(self):
+        return f"<A>({self.x}, {self.y})"
+
+
+a = A(5)
+a.x
+```
+
+Example 1: print `repr(obj)`
+
+```
+(lldb) expr PyUnicode_AsUTF8(v->ob_type->tp_repr(v))
+(const char *) $18 = 0x00000001009bf430 "<A>(5, 10)"
+```
+
+Example 2: print `obj.__dict__`
+
+```
+(lldb) expr -- PyObject* $xx = PyObject_GenericGetDict(v, 0)
+(lldb) expr -- PyObject* $yy = ($xx)->ob_type->tp_repr($xx)
+(lldb) expr PyUnicode_AsUTF8($yy)
+(const char *) $2 = 0x00000001009bf3d0 "{'x': 5, 'y': 10}"
+```
+
+Example 3: get attribute
+
+```
+(lldb) expr -- PyObject* $rr = PyObject_GetAttr(v, PyUnicode_FromString("y"))
+(lldb) expr PyUnicode_AsUTF8($rr->ob_type->tp_repr($rr))
+(const char *) $21 = 0x000000010097b4f0 "10"
+```
 
 ## Debug
 
