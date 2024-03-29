@@ -20,6 +20,13 @@ For the case of Kafka Connect, we can enable it by setting the `KAFKA_DEBUG`
 environment variable. See
 [code](https://github.com/apache/kafka/blob/2.8.1/bin/kafka-run-class.sh#L245-L245).
 
+```
+-agentlib:jdwp=transport=dt_socket,server=y,address=5005
+```
+
+`server=y` means that it starts a server and waits for client to connect.
+`server=n` has reverse meaning.
+
 Then we can use jdb to connect to this process
 
 ```
@@ -48,6 +55,12 @@ interrupt <thread id>     -- interrupt a thread
 
 It is very similar to gdb. You can set breakpoint, print out thread stack
 trace. And I think it has better support for debugging multi-thread program.
+
+A few notes about breakpoints. First, we must use full class path such as
+`stop at org.opensearch.cluster.ClusterState:706`. Second, for inner class, we
+should do `stop at <full_class_path>$<inner_class_name>:line_number`. For
+example, `stop at org.opensearch.cluster.ClusterState$Builder:706`. You can
+inspect the outer class by `class <full_class_path>`.
 
 ## Cross compilation
 
