@@ -11,9 +11,9 @@ tags: [elk, elasticsearch, opensearch]
 Zen discovery
 
 Reference:
-https://www.elastic.co/guide/en/elasticsearch/reference/current/discovery-hosts-providers.html
+<https://www.elastic.co/guide/en/elasticsearch/reference/current/discovery-hosts-providers.html/>
 
-Snapshot related logic is mainly contained in class.
+Snapshot related logic is mainly contained in class
 [SnapshotsService](https://github.com/opensearch-project/OpenSearch/blob/5b4b4aa4c282d06a93de72a5c07a54a1524b04ff/server/src/main/java/org/opensearch/snapshots/SnapshotsService.java#L2693-L2693).
 One thing to note when snapshotting is happening, you cannot delete index.
 Otherwise, you will see
