@@ -6,6 +6,29 @@ categories: [elk]
 tags: [elk, elasticsearch, opensearch]
 ---
 
+We know that Opensearch was forked from Elasticsearch 7.10.2 by AWS after
+Elastic changed Elasticsearch license. Most concepts and APIs are the same
+between them, but there are still some gotchas.
+
+In both ES and OS, there is only one node that is responsible for maintaining a
+consistent cluster status, which is called master node in ES, but
+cluster-manager node in OS. If you run `GET /_cat/nodes?v` in both ES and OS,
+you can see the name difference. It seems that Opensearch team deliberately
+wants to change this name. See
+[source file of class TransportClusterManagerNodeAction](https://github.com/opensearch-project/OpenSearch/blob/5b4b4aa4c282d06a93de72a5c07a54a1524b04ff/server/src/main/java/org/opensearch/action/support/clustermanager/TransportClusterManagerNodeAction.java#L88-L88).
+
+Read
+[Opensearch developer guide](https://github.com/opensearch-project/OpenSearch/blob/main/DEVELOPER_GUIDE.md#developer-guide)
+to get start locally.
+
+```
+./gradlew localDistro
+./gradlew run --debug-server-jvm
+```
+
+Parameter `--debug-server-jvm` above turns on remote debugging, so you can
+debug it using jdb.
+
 ## Node discovery
 
 Zen discovery
