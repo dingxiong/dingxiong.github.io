@@ -6,6 +6,32 @@ categories: [programming-language, java]
 tags: [java]
 ---
 
+[openjdk](https://github.com/openjdk/jdk) is the starting point. However,
+IntelliJ fails to resolve symbols when open it directly. Actually, openjdk team
+provides some guidance on how to set up the repo in IntelliJ. See
+[doc](https://github.com/openjdk/jdk/blob/master/doc/ide.md#intellij-idea).
+
+```bash
+bash configure
+bash bin/idea.sh
+```
+
+I encountered a few errors when running above two commands in a Macbook M1. In
+the configure step,
+
+```
+configure: error: XCode tool 'metal' neither found in path nor with xcrun
+```
+
+This [post](https://github.com/gfx-rs/gfx/issues/2309) helps. Basically, we
+need to change the active developer directory of xcode. We can change it back
+once the configuration stage is done.
+
+The second step requires ant: `brew install ant`.
+
+However, after all these steps, it still does not work. Finally, I use a simple
+trick: `File -> Project Structure -> Modules -> Add an existing JDK`.
+
 ## Debug
 
 I am testing some Kafka Connect plugin recently. Instead of using `print` to

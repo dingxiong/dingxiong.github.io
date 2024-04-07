@@ -29,8 +29,14 @@ group coordinator.
 Checkout https://github.com/apache/kafka and
 
 ```bash
+# you may need to use a lower version of Java
+export JAVA_HOME=/Users/xiongding/Library/Java/JavaVirtualMachines/azul-13.0.14/Contents/Home
+
 # do not running tests as it takes too much time.
 ./gradlew build -x test
+
+# run a specific test
+./gradlew clients:test --tests '*PemKeyStoreFileWithKeyPassword*'
 ```
 
 ## Code structure
