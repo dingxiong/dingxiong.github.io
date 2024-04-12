@@ -142,13 +142,12 @@ I failed to cross compile it in Macbook M1.
 
 ### backtrace in glibc
 
-There are multiple different ways to get stack traces in C/C++. Let's follow
-this great
-[blog](https://eli.thegreenplace.net/2015/programmatic-access-to-the-call-stack-in-c).
-It claims there are three ways to obtain a stacktrace. First is the gcc's
-builtin function `__builtin_return_address`. I tried to read relevant code in
-gcc, but quickly got lost as the implementation of this builtin function
-finally resorted to register manipulation.
+There are multiple ways to get stacktraces in C/C++. This is great
+[blog](https://eli.thegreenplace.net/2015/programmatic-access-to-the-call-stack-in-c)
+on this topic. It claims there are three ways to obtain a stacktrace. First is
+the gcc's builtin function `__builtin_return_address`. I tried to read relevant
+code in gcc, but quickly got lost as the implementation of this builtin
+function finally resorts to register manipulation.
 
 Let's talk about the third option `libunwind` then. It claims to be portable
 and efficient to unwind stack traces. Let's focus on the backtrace
@@ -234,21 +233,23 @@ First `gcc -print-file-name` command is so useful! Second, the file path is so
 wired. It is inside `/urs/lib/x86_64-linux-gnu`, but not `/usr/lib/gcc`. I
 suspect it is shipped with Linux instead of installed together with gcc. So I
 did a quick experiment. I launched a docker container
-`docker run -i -t ubuntu /bin/bash` and with a fresh ubuntu image
+`docker run -i -t ubuntu /bin/bash` and inside this fresh ubuntu image
 
 ```
 root@6adc2dc89d0b:/# ll /usr/lib/aarch64-linux-gnu/libgcc_s.so.1
 -rw-r--r-- 1 root root 84296 May 13  2023 /usr/lib/aarch64-linux-gnu/libgcc_s.so.1
 ```
 
+This .so file exits without installing gcc!
+
 Third, this shared library has quite a few function starting with `_Unwind_`.
-And you notice that all these functions shows up in `libunwind` library as
-well. So basically, this is glibc's own implementation of `libunwind`?
-Actually, it depends. glibc has its own implementation such as
+And you notice that all these functions show up in `libunwind` library as well.
+So basically, this is glibc's own implementation of `libunwind`? Actually, it
+depends. glibc has its own implementation such as
 [this one](https://github.com/gcc-mirror/gcc/blob/d1a21a6f9474e519926d20a7c6d664be03aff3ee/libgcc/unwind.inc#L291).
 But it is not always used. It depends on the flag
 [USE_LIBUNWIND_EXCEPTIONS](https://github.com/gcc-mirror/gcc/blob/d1a21a6f9474e519926d20a7c6d664be03aff3ee/gcc/gcc.cc#L1926).
 If this flag is defined, GCC will link with `-lunwind` and all its internal
-`_Unwind_` implementation will just delegates to corresponding ones in
-`libunwind`. glics's own doc has clearly statement about this well. See
+`_Unwind_` implementations delegate to corresponding ones in `libunwind`.
+glics's own doc has clear statement about this well. See
 [doc](https://github.com/bminor/glibc/blob/cf11e74b0d81d389bcad5cdbba020ba475f0ac4b/manual/debug.texi#L42).
