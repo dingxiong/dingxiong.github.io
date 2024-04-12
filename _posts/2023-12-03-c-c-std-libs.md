@@ -250,4 +250,5 @@ But it is not always used. It depends on the flag
 [USE_LIBUNWIND_EXCEPTIONS](https://github.com/gcc-mirror/gcc/blob/d1a21a6f9474e519926d20a7c6d664be03aff3ee/gcc/gcc.cc#L1926).
 If this flag is defined, GCC will link with `-lunwind` and all its internal
 `_Unwind_` implementation will just delegates to corresponding ones in
-`libunwind`.
+`libunwind`. glics's own doc has clearly statement about this well. See
+[doc](https://github.com/bminor/glibc/blob/cf11e74b0d81d389bcad5cdbba020ba475f0ac4b/manual/debug.texi#L42).
