@@ -247,7 +247,7 @@ summarizes how this plugin works.
 
 Let's dive into these two components.
 
-## aws-cni
+#### aws-cni
 
 We need to ssh into the host to see where aws-cni is.
 
@@ -307,7 +307,7 @@ The code for `aws-cni` is
 It is quite simple. It implements `ADD` and `DELTETE` endpoints of CNI by
 calling a gRPC service `ipamd`.
 
-## ipamd
+#### ipamd
 
 `ipamd` stands for IP address manager daemon. It runs in the `kube-system`
 namespace in `aws-node-xxx` pod. Below lists the processes running inside a
@@ -508,3 +508,168 @@ default via 172.31.64.1 dev eth0
 
 At this point, I hope you have a good understanding about how CNI works inside
 AWS EKS :).
+
+### CoreDNS
+
+In `kube-proxy` section, we discussed how kube-proxy manages iptables and we
+see domain name like `ip-172-31-80-113.us-east-2.compute.internal` shows up in
+the iptables rules. For packets to transmit, there is step of translating this
+name to an IP address. Who does this work for us then? The answer is CoreDNS.
+
+See below `resolv.conf` file I grabbed from a random pod. You see the name
+server points to `10.100.0.10` which is the IP address of the `kube-dns`
+service.
+
+```
+root@server-684c765d78-6z4wv:/app# cat /etc/resolv.conf
+nameserver 10.100.0.10
+search qa.svc.cluster.local svc.cluster.local cluster.local us-east-2.compute.internal
+options ndots:5
+```
+
+```
+$ k get svc kube-dns -n kube-system
+NAME       TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)         AGE
+kube-dns   ClusterIP   10.100.0.10   <none>        53/UDP,53/TCP   2y73d
+```
+
+Note that the service name is `kube-dns` not `coredns`. This is because before
+CoreDNS was invented, kubernetes uses `kube-dns`. CoreDNS is a replacement of
+`kube-dns`, and it decided to reuse the same service name `kube-dns` to make it
+easy to upgrade kubernetes clusters. Check out
+[this page](https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/)
+for more details.
+
+The `dig` command below also shows `SERVER: 10.100.0.10#53`.
+
+```
+root@server-684c765d78-6z4wv:/app# dig redis.production +search
+
+; <<>> DiG 9.16.37-Debian <<>> redis.production +search
+;; global options: +cmd
+;; Got answer:
+;; WARNING: .local is reserved for Multicast DNS
+;; You are currently testing what happens when an mDNS query is leaked to DNS
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 51089
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: efb9d7acd5ce18a1 (echoed)
+;; QUESTION SECTION:
+;redis.production.svc.cluster.local. IN A
+
+;; ANSWER SECTION:
+redis.production.svc.cluster.local. 5 IN A      10.100.215.197
+
+;; Query time: 0 msec
+;; SERVER: 10.100.0.10#53(10.100.0.10)
+;; WHEN: Sun Feb 05 04:38:21 UTC 2023
+;; MSG SIZE  rcvd: 125
+```
+
+#### How does it work
+
+CoreDNS loads its config file from a configmap as below.
+
+```
+$ k describe configmap coredns
+Name:         coredns
+Namespace:    kube-system
+Labels:       eks.amazonaws.com/component=coredns
+              k8s-app=kube-dns
+Annotations:  <none>
+
+Data
+====
+Corefile:
+----
+.:53 {
+    errors
+    health
+    kubernetes cluster.local in-addr.arpa ip6.arpa {
+      pods insecure
+      fallthrough in-addr.arpa ip6.arpa
+    }
+    prometheus :9153
+    forward . /etc/resolv.conf
+    cache 30
+    loop
+    reload
+    loadbalance
+}
+
+
+BinaryData
+====
+
+Events:  <none>
+```
+
+Each row in the curly bracket is a plugin. Here we only care about the
+`kubernetes` plugin. It has a few parameters.
+
+- `cluster.local`, `in-addr.arpa` and `ip6.arpa` are zone names, among which,
+  `cluster.local` is the primary zone.
+- `pods insecure` means when resolving a pod's address, we do not verify the
+  existence of this pod. The other option is `verified`.
+- `fallthrough in-addr.arpa ip6.arpa`: [TODO: read this part]
+
+Checkout the
+[initialization code](https://github.com/coredns/coredns/blob/169da444ff5ca96104db73742636cc4c9ad15157/plugin/kubernetes/setup.go#L87).
+
+OK, we said enough about configuration. Let's see how kubernetes plugin works.
+Let's use the above dig example `dig redis.production +search`. The entry point
+is
+[here](https://github.com/coredns/coredns/blob/169da444ff5ca96104db73742636cc4c9ad15157/plugin/kubernetes/handler.go#L13).
+First, it will find out the matching zone for this request, which matches
+`cluster.local`. Then after a few function jumps, it comes to
+[here](https://github.com/coredns/coredns/blob/169da444ff5ca96104db73742636cc4c9ad15157/plugin/kubernetes/kubernetes.go#L377).
+The interesting part is this line
+
+```
+	r, e := parseRequest(state.Name(), state.Zone)
+```
+
+This function translates a DNS request to a kubernetes lookup request. What I
+mean is, using our example, it translate the DNS request for host name
+`redis.production.svc.cluster.local.` to a request of finding out the service
+`redis` in namespace `production`. Once this service is retrieved from
+kubernetes api server, then the internal IP of this service is returned to the
+DNS client. Here, `state.Name()` is the DNS query question name, which is
+`redis.production.svc.cluster.local.` (copied below).
+
+```
+;; QUESTION SECTION:
+;redis.production.svc.cluster.local. IN A
+```
+
+`state.Zone` is `cluster.local.`. If you read this function carefully, you will
+see that it only support 3 different types of DNS host name. Here we show some
+examples.
+
+**Query by service name**
+
+```
+# dig redis.production.svc.cluster.local +noall +answer
+redis.production.svc.cluster.local. 5 IN A      10.100.215.197
+```
+
+**Query by endpoints id**
+
+```
+# dig 172-31-89-91.redis-master.production.svc.cluster.local +noall +answer
+172-31-89-91.redis-master.production.svc.cluster.local. 5 IN A 172.31.89.91
+```
+
+Here the ip address is the ip of endpoints `redis-master`.
+
+**Query by pod id**
+
+```
+# dig 172-31-89-91.production.pod.cluster.local +noall +answer
+172-31-89-91.production.pod.cluster.local. 5 IN A 172.31.89.91
+```
+
+Here the ip address is the ip of a pod `redis-master-0`.
