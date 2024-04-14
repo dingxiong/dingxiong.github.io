@@ -163,3 +163,23 @@ I found this
 the goal and motivation behind GOT and PLT best. Also, follow
 [this post](https://www.technovelty.org/linux/plt-and-got-the-key-to-code-sharing-and-dynamic-libraries.html)
 to see the assembly details.
+
+### DWARF
+
+[Introduction to the DWARF Debugging Format](https://dwarfstd.org/doc/Debugging%20using%20DWARF-2012.pdf)
+is a must read for beginners to learn about DWARF. Cited from this pager.
+
+> it (DWARF) is a compact representation of the relationship between the
+> executable program and the source in a way that is reasonably efficient for a
+> debugger to process.
+
+The format is extensible in a uniform fashion, so that a debugger can recognize
+and ignore an extension, even if it might not understand its meaning. (This is
+much better than the situation with most other debugging formats where the
+debugger gets fatally confused attempting to read unrecognized data.)
+
+Debugging Information Entry DIE: tag & attributes
+
+Line number table
+
+CFI: call frame information The CFI describes how to unwind the stack.
