@@ -123,7 +123,87 @@ We have gone so far in finding the definition of `std::time_t`!
 
 ## glibc
 
-Compile glibc in Linux is straightforward.
+Glibc is the standard C library for the GNU operating system and other systems
+that use the Linux kernel. For a long time, I am confused by what exactly glibc
+provides because I saw lots of code that include headers such as
+`<sys/epoll.h>` and `<unistd.h>`. I definitely did not see these headers when I
+was learning C when I was a undergraduate. Cited from glibc's
+[home page](https://www.gnu.org/software/libc/)
+
+> The GNU C Library - The project provides the core libraries for the GNU
+> system and GNU/Linux systems, as well as many other systems that use Linux as
+> the kernel. These libraries provide critical APIs including ISO C11,
+> POSIX.1-2008, BSD, OS-specific APIs and more. These APIs include such
+> foundational facilities as open, read, write, malloc, printf, getaddrinfo,
+> dlopen, pthread_create, crypt, login, exit and more.
+
+So basically, it not only supports ISO C, but also POSIX.1 standard. And there
+are quite a few Linux specific system calls. The C standard header files are
+[here](https://en.cppreference.com/w/c/header). POSIX.1 header files are
+[here](https://en.wikipedia.org/wiki/C_POSIX_library). The headers provided by
+glibc is under the
+[include directory](https://github.com/bminor/glibc/tree/master/include). There
+are much more headers inside `include/sys` than specified by POSIX.1. Most of
+them are wrappers to Linux system calls.
+
+```
+Header                             POSIX header
+-----------------------------------------------------------
+include/sys/ipc.h                    Y
+include/sys/mman.h                   Y
+include/sys/msg.h                    Y
+include/sys/resource.h               Y
+include/sys/select.h                 Y
+include/sys/sem.h                    Y
+include/sys/shm.h                    Y
+include/sys/socket.h                 Y
+include/sys/statvfs.h                Y
+include/sys/stat.h                   Y
+include/sys/times.h                  Y
+include/sys/time.h                   Y
+include/sys/types.h                  Y
+include/sys/uio.h                    Y
+include/sys/un.h                     Y
+include/sys/utsname.h                Y
+include/sys/wait.h                   Y
+-----
+include/sys/unistd.h                 N
+include/sys/ttychars.h               N
+include/sys/timeb.h                  N
+include/sys/termios.h                N
+include/sys/sysmacros.h              N
+include/sys/syslog.h                 N
+include/sys/sysinfo.h                N
+include/sys/statfs.h                 N
+include/sys/single_threaded.h        N
+include/sys/signal.h                 N
+include/sys/sendfile.h               N
+include/sys/resource.h               N
+include/sys/random.h                 N
+include/sys/queue.h                  N
+include/sys/profil.h                 N
+include/sys/prctl.h                  N
+include/sys/poll.h                   N
+include/sys/param.h                  N
+include/sys/ioctl.h                  N
+include/sys/gmon_out.h               N
+include/sys/gmon.h                   N
+include/sys/file.h                   N
+include/sys/fcntl.h                  N
+include/sys/errno.h                  N
+include/sys/epoll.h                  N
+include/sys/dir.h                    N
+include/sys/cdefs.h                  N
+include/sys/bitypes.h                N
+include/sys/auxv.h                   N
+include/sys/xattr.h                  N
+include/sys/vlimit.h                 N
+include/sys/vfs.h                    N
+```
+
+### build
+
+Building glibc in Linux is straightforward.
 
 ```bash
 git clone git://sourceware.org/git/glibc.git --depth=1
