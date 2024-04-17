@@ -157,3 +157,67 @@ TaskOOM event &TaskOOM{ContainerID:a38973e2086019e6411254a3b9e2b8885929f005f4c81
 ```
 
 TODO: figure out the code path: malloc -> sys_brk -> \_\_alloc_pages
+
+### cgroup memory notifier
+
+At current company, I am eagerly need a way to add more traces to OOM event. I
+would like to know what the OOM-killed process is doing before killed. The
+[cgroup memory manual](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
+says `memory.oom_control` can be used to register a notifier, but I kind of
+suspect whether it is effective because this mechanism is totally async. When
+the notifier receives the event, the target process is terminated already. So I
+guess a better way is setting a threshold notifier: use `cgroup.event_control`
+with a threshold say `memory.limit_in_bytes * 0.95`.
+
+There is a good C example online. See
+[code](https://github.com/matteobertozzi/blog-code/blob/master/cgroup-mem-threshold/cgroup-mem-threshold.c).
+I translated it to python as below
+
+```python
+import os
+import sys
+from pathlib import Path
+import selectors
+
+def main(threshold_bytes: int):
+    usage_fd = -1
+    event_fd = -1
+    try:
+        base_dir = Path("/sys/fs/cgroup/memory")
+
+        usage_fd = os.open(base_dir / "memory.usage_in_bytes", os.O_RDONLY)
+        event_fd = os.eventfd(0, os.EFD_NONBLOCK | os.EFD_CLOEXEC)
+        print(f"event_fd {event_fd}  usage_fd {usage_fd}")
+
+        event = f"{event_fd} {usage_fd} {threshold_bytes}"
+        with open(base_dir / "cgroup.event_control", "w") as f:
+            f.write(event)
+
+        selector = selectors.DefaultSelector()
+        selector.register(event_fd, selectors.EVENT_READ)
+        while True:
+            events = selector.select()
+            for key, mask in events:
+                bs = os.read(event_fd, 8)
+                val = int.from_bytes(bs, sys.byteorder)
+                print("Notfication", key, val, mask)
+
+    finally:
+        if usage_fd > 0:
+            os.close(usage_fd)
+        if event_fd > 0:
+            os.close(event_fd)
+
+if __name__ == "__main__":
+    main(threshold_bytes=2921592064)
+```
+
+When running it inside a k8s pod, I immediately received an error saying file
+`cgroup.event_control` is read-only! Then I found this
+[issue](https://github.com/kubernetes/kubernetes/issues/121190). Basically, we
+need to create the pod with below config.
+
+```
+securityContext:
+  privileged: true
+```
