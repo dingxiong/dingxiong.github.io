@@ -160,14 +160,15 @@ TODO: figure out the code path: malloc -> sys_brk -> \_\_alloc_pages
 
 ### cgroup memory notifier
 
-At current company, I am eagerly need a way to add more traces to OOM event. I
-would like to know what the OOM-killed process is doing before killed. The
+At current company, I desperately need a way to add more debugging info to OOM
+events. Eng team is complaining that they do not know where to investigate when
+OOM happens. The
 [cgroup memory manual](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)
 says `memory.oom_control` can be used to register a notifier, but I kind of
-suspect whether it is effective because this mechanism is totally async. When
-the notifier receives the event, the target process is terminated already. So I
-guess a better way is setting a threshold notifier: use `cgroup.event_control`
-with a threshold say `memory.limit_in_bytes * 0.95`.
+suspect it won't be effective for us because this mechanism is totally async.
+When the notifier receives the event, the target process is probably terminated
+already. So I guess a better way is setting a threshold notifier: use
+`cgroup.event_control` with a threshold say `memory.limit_in_bytes * 0.95`.
 
 There is a good C example online. See
 [code](https://github.com/matteobertozzi/blog-code/blob/master/cgroup-mem-threshold/cgroup-mem-threshold.c).
@@ -221,3 +222,7 @@ need to create the pod with below config.
 securityContext:
   privileged: true
 ```
+
+After getting the basic mechanism working, the next step is to sending signals
+to relevant processes when event is triggered, and all processes should set a
+signal handler to dump stacktrace.
