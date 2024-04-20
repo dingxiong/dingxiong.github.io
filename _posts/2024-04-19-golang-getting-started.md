@@ -133,3 +133,28 @@ this part is implemented in go 1.19.13, but this
 [commit](https://github.com/golang/go/commit/ce2a609909d9de3391a99a00fe140506f724f933)
 adds a file `inittask.go`, which does topological sorting to figure out the
 import order.
+
+The compiler generates the `main.init` and `main.init.0` functions. That is
+good, but how are they called? We can check the assembly output of the
+generated binary by `go tool objdump -s '^main*' <binary>`. The output contains
+three labels: `main.main`, `main.init` and `main.init.0`. The Golang runtime
+ensures that the latter two run before `main.main`. (TODO: figure out how
+runtime calls them in this order.)
+
+OK, coming back to the original C example. The Golang equivalent one is
+
+```c
+#include <stdio.h>
+int foo() { return 5; }
+int a;
+
+void main_init() {
+  a = foo();
+}
+
+int main(int argc, char** argv) {
+  main_init();
+  printf("%d\n", a);
+  return 0;
+}
+```
