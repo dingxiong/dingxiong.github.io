@@ -7,6 +7,11 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-04-28 Sunday
+
+A good blog about Golang runtime
+https://zboya.github.io/post/go_scheduler/#runtimemain-%E7%9A%84%E6%89%A7%E8%A1%8C
+
 ## 2024-03-07 Thursday
 
 A terrible learning about k8s

@@ -49,3 +49,9 @@ handled uniformly. See code
 That's probably why `dpkp/kafka-python` only uses
 [version 0 and 1](https://github.com/dpkp/kafka-python/blob/12325c09baefae2396f1083bc8b037603721198c/kafka/consumer/fetcher.py#L573)
 to call this API. By the way, I failed to call this API using version 5.
+
+## Reset Offsets
+
+```
+kafka-consumer-groups.sh --bootstrap-server <kafka_broker_host:9091> --group <group_name> --reset-offsets --to-latest --topic <my-topic> --execute
+```
