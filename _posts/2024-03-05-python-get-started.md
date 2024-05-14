@@ -151,6 +151,24 @@ Also,
 [pyrasite](https://gist.github.com/dingxiong/637010c102e77d3d6db2a641147d5121)
 is super helpful to attach to a python process as well.
 
+Pyrasite's implementation is interesting. Basically, it uses
+`PyRun_SimpleString`.
+
+```
+(gdb) call PyGILState_Ensure()
+$1 = PyGILState_UNLOCKED
+(gdb) call PyRun_SimpleString("print(5+10); print(1000)")
+(gdb) set $f = (FILE*)(fopen("xiong2.py", "r"))
+(gdb) print $f
+$19 = (FILE *) 0x5630fc64f370
+(gdb) call PyRun_SimpleFile($f, "xiong2.py")
+(gdb) call fclose($f)
+(gdb) call PyGILState_Release(1)
+```
+
+See value of
+https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Include/pystate.h#L77
+
 ## Python syntax
 
 ### Class

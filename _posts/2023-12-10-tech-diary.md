@@ -7,15 +7,20 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-05-12 Sunday
+
+This is a good blog about heap analysis.
+<http://jam-bazaar.blogspot.com/2009/11/memory-debugging-with-meliae.html>
+
 ## 2024-04-28 Sunday
 
 A good blog about Golang runtime
-https://zboya.github.io/post/go_scheduler/#runtimemain-%E7%9A%84%E6%89%A7%E8%A1%8C
+<https://zboya.github.io/post/go_scheduler/#runtimemain-%E7%9A%84%E6%89%A7%E8%A1%8C>
 
 ## 2024-03-07 Thursday
 
 A terrible learning about k8s
-https://github.com/kubernetes/kubernetes/issues/43916
+<https://github.com/kubernetes/kubernetes/issues/43916>
 
 ## 2024-1-23 Tuesday
 

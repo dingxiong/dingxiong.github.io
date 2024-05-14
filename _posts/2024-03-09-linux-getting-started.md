@@ -158,6 +158,9 @@ Dynamic section at offset 0x1320530 contains 33 entries:
 
 #### GOT (global offset table) and PLT (procedure linkage table)
 
+This is the best post about position independent code (PIC) ever:
+<https://eli.thegreenplace.net/2011/11/03/position-independent-code-pic-in-shared-libraries/>.
+
 I found this
 [answer](https://reverseengineering.stackexchange.com/a/20214/43649) expresses
 the goal and motivation behind GOT and PLT best. Also, follow
