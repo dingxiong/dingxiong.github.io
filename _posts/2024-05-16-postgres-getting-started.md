@@ -39,5 +39,5 @@ postgres data file.
 The `00 00 00 08` in the first line says the next field has 8 bytes. The value
 follows is
 `00 02 4d 04 9e 82 c7 00 = 647632188000000 (ms) = 1990 5:49:48 PM Unix epoch time = 2020 5:49:48 PM Postgres epoch time`.
-The `00 00 00 08` designates another timestamp. Note, there are a lot `ff`
-bytes follows. These `-1` values denote NULL values.
+The `00 00 00 08` in the second line designates another timestamp. Note, there
+are a lot `ff` bytes follows. These `-1` values denote NULL values.
