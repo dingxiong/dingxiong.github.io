@@ -7,6 +7,23 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-05-15 Wed
+
+I just watched a video from Jeff Dean about ML, and wrote down the papers
+mentioned below. Hopefully, I will have chance of reading them sometime in the
+future.
+
+- 2007
+  [Large Language Models in Machine Translation](https://research.google/pubs/large-language-models-in-machine-translation/)
+- 2013
+  [Efficient Estimation of Word Representations in Vector Space](https://arxiv.org/abs/1301.3781)
+- 2014
+  [Sequence to Sequence Learning with Neural Networks](https://arxiv.org/abs/1409.3215)
+- 2015 [A Neural Conversational Model](https://arxiv.org/abs/1506.05869)
+- 2017 [Attention Is All You Need](https://arxiv.org/abs/1706.03762)
+- 2020
+  [Towards a Human-like Open-Domain Chatbot](https://arxiv.org/abs/2001.09977)
+
 ## 2024-05-12 Sunday
 
 This is a good blog about heap analysis.
