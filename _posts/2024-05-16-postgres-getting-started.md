@@ -21,8 +21,17 @@ cd .. && ln -s build_dir/compile_commands.json compile_commands.json
 
 Postgres only supports importing data from text, csv and binary files. The
 binary protocol is covered briefly
-[here](https://www.postgresql.org/docs/current/sql-copy.html). The
-(de)serialization protocol for each data type is defined by the `_send` and
+[here](https://www.postgresql.org/docs/current/sql-copy.html). Basically,
+
+1. Each row starts with a 16-bit integer denoting the number of fields in this
+   row.
+2. Follow 16-bit integer is a sequence of fields. Each field starts with a
+   32-bit integer denoting the size of the field, and then follows the binary
+   data of this field.
+
+See code
+[here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/commands/copyfromparse.c#L1015).
+The (de)serialization protocol for each data type is defined by the `_send` and
 `_recv` functions inside the `adt` folder, i.e., Abstract Data Types. See
 [timestamp example](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/utils/adt/timestamp.c#L258).
 Basically, timestamp is just a uint64 that stores the microseconds from
@@ -41,3 +50,7 @@ follows is
 `00 02 4d 04 9e 82 c7 00 = 647632188000000 (ms) = 1990 5:49:48 PM Unix epoch time = 2020 5:49:48 PM Postgres epoch time`.
 The `00 00 00 08` in the second line designates another timestamp. Note, there
 are a lot `ff` bytes follows. These `-1` values denote NULL values.
+
+## Toast storage
+
+TODO: learn it
