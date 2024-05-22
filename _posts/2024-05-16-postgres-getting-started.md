@@ -25,9 +25,9 @@ binary protocol is covered briefly
 
 1. Each row starts with a 16-bit integer denoting the number of fields in this
    row.
-2. Follow 16-bit integer is a sequence of fields. Each field starts with a
-   32-bit integer denoting the size of the field, and then follows the binary
-   data of this field.
+2. Following this 16-bit integer is a sequence of fields. Each field starts
+   with a 32-bit integer denoting the size of the field, and then is followed
+   by the binary data of this field.
 
 See code
 [here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/commands/copyfromparse.c#L1015).
