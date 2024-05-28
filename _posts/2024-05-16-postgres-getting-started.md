@@ -83,3 +83,6 @@ So we are sure pgloader is not stupid to cause obvious OOM. Third, pgload has
 configuration parameter controlling whether we only want to copy data or also
 need to create tables beforehand. See
 [doc](https://github.com/dimitri/pgloader/blob/2079646c81f565b5e9edba627d14cbf63af2dbdd/docs/index.rst#L144).
+Last, data is copied as binary as described in the above binary protocol. The
+code is
+[here](https://github.com/dimitri/pgloader/blob/2079646c81f565b5e9edba627d14cbf63af2dbdd/src/pg-copy/copy-format.lisp#L15-L16).
