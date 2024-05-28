@@ -54,3 +54,32 @@ are a lot `ff` bytes follows. These `-1` values denote NULL values.
 ## Toast storage
 
 TODO: learn it
+
+## pgloader
+
+`pgloader` is a great tool to migrate data from another database to postgres.
+Using Mysql -> postgres as an example, the main logic is
+
+```
+process-source-and-target (main.lisp#main)
+  -> load-data (api.lisp#process-source-and-target)
+    -> lisp-code-for-loading-from-mysql (api.lisp#load-data)
+      -> copy-database (command-mysql.lisp#lisp-code-for-loading-from-mysql)
+        -> copy-from (migrate-database.lisp#copy-database)
+          -> queue-raw-data (copy-data.lisp#copy-from)
+            -> map-rows (copy-data.lisp#queue-raw-data)
+              -> (mysql.lisp#map-rows)
+```
+
+There are lots of things going along the chain. First, it takes a
+producer-consumer model using channels provided by the `lparallel` package,
+which is every similar to Golang. It is true that Lisp is a multi-paradigm
+programming language. Second, the `map-rows`
+[implementation](https://github.com/dimitri/pgloader/blob/2079646c81f565b5e9edba627d14cbf63af2dbdd/src/sources/mysql/mysql.lisp#L120)
+inside `mysql.lisp` actually uses batching. The batch size is controlled by
+configuration parameter
+[rows-per-range](https://github.com/dimitri/pgloader/blob/2079646c81f565b5e9edba627d14cbf63af2dbdd/src/sources/mysql/mysql.lisp#L46).
+So we are sure pgloader is not stupid to cause obvious OOM. Third, pgload has
+configuration parameter controlling whether we only want to copy data or also
+need to create tables beforehand. See
+[doc](https://github.com/dimitri/pgloader/blob/2079646c81f565b5e9edba627d14cbf63af2dbdd/docs/index.rst#L144).

@@ -41,6 +41,7 @@ below.
    `#\'` denotes a single quote.
 2. `#(`: simple vector. For example: `#(a b c )`
 3. `#:`: uninterned symbol.
+4. `#+`: read-time conditionalization facility.
 
 Some of these special character are not reader macros, but pure styling
 convention. See [Common Lips style guide](https://lisp-lang.org/style-guide/):
