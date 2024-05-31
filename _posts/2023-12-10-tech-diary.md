@@ -7,6 +7,14 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-05-31 Fri
+
+After upgrading MacOS, nerds fonts refused to work. After a quick search
+online, I found it is the problem with iTerm2:
+`settings -> profiles -> default -> Text -> font -> Hack Nerd Font`. Maybe I
+should spend some time learning the internals of how font works inside terminal
+emulator.
+
 ## 2024-05-15 Wed
 
 I just watched a video from Jeff Dean about ML, and wrote down the papers
