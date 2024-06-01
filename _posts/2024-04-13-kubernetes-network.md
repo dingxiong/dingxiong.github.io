@@ -26,7 +26,7 @@ websocket to replace SPDY in kubernetes. See
 [this ticket](https://github.com/kubernetes/kubernetes/issues/89163). But It
 hasn't been done yet!
 
-### Kube proxy
+## Kube proxy
 
 Mayank Shah wrote a clear explanation of
 [how kube-proxy works](https://mayankshah.dev/blog/demystifying-kube-proxy/).
@@ -158,7 +158,7 @@ some places use `ip-xxx.us-east-2.compute.internal` DNS names. Then the
 questions is how kube-proxy get these ip addresses and how dns is resolved. The
 answer lies on CNI and coreDns.
 
-### CNI
+## CNI
 
 In the `kube-proxy` section, we discussed how kube-proxy maintains iptable
 rules inside nodes. Iptable rules tells which ip address to route the traffic
@@ -205,7 +205,7 @@ summarizes how this plugin works.
 
 Let's dive into these two components.
 
-#### aws-cni
+### aws-cni
 
 We need to ssh into the host to see where aws-cni is.
 
@@ -265,7 +265,7 @@ The code for `aws-cni` is
 It is quite simple. It implements `ADD` and `DELTETE` endpoints of CNI by
 calling a gRPC service `ipamd`.
 
-#### ipamd
+### ipamd
 
 `ipamd` stands for IP address manager daemon. It runs in the `kube-system`
 namespace in `aws-node-xxx` pod. Below lists the processes running inside a
@@ -467,7 +467,7 @@ default via 172.31.64.1 dev eth0
 At this point, I hope you have a good understanding about how CNI works inside
 AWS EKS :).
 
-### CoreDNS
+## CoreDNS
 
 In `kube-proxy` section, we discussed how kube-proxy manages iptables and we
 see domain name like `ip-172-31-80-113.us-east-2.compute.internal` shows up in
@@ -527,7 +527,7 @@ redis.production.svc.cluster.local. 5 IN A      10.100.215.197
 ;; MSG SIZE  rcvd: 125
 ```
 
-#### How does it work
+### How does it work
 
 CoreDNS loads its config file from a configmap as below.
 
