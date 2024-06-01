@@ -6,6 +6,16 @@ categories: [kubernetes]
 tags: [kubernetes]
 ---
 
+## Operatons
+
+### Increase the disk size of StatefulSet PVC
+
+```bash
+kubectl edit pvc <pvc-name> -n <namespace>
+kubectl delete statefulset --cascade=orphan <statefulset_name> -n <namespace>
+# Then you can reapply the helm chart
+```
+
 ## Pod
 
 I learned a lot from Lan Lewis's blog
