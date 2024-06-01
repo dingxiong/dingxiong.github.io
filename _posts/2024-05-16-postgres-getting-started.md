@@ -17,6 +17,25 @@ bear -- make -j6
 cd .. && ln -s build_dir/compile_commands.json compile_commands.json
 ```
 
+We need some sample data. [sakila](https://github.com/jOOQ/sakila/tree/main) is
+a popular data set.
+
+```
+git clone git@github.com:jOOQ/sakila.git --depth=1
+psql -d test -f ~/code/sakila/postgres-sakila-db/postgres-sakila-schema.sql
+psql -d test -f ~/code/sakila/postgres-sakila-db/postgres-sakila-insert-data.sql
+psql test
+
+test=# insert into actor (first_name, last_name) values ('x', 'y'), ('z', 'w') returning actor_id, last_update;
+ actor_id |        last_update
+----------+----------------------------
+      204 | 2024-06-01 00:16:58.206651
+      205 | 2024-06-01 00:16:58.206651
+(2 rows)
+
+INSERT 0 2
+```
+
 ## binary file
 
 Postgres only supports importing data from text, csv and binary files. The
