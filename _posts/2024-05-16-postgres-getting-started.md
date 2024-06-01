@@ -19,16 +19,23 @@ cd .. && ln -s build_dir/compile_commands.json compile_commands.json
 
 Postgres documents the progress of creating and starting a postgres database
 [in detail](https://www.postgresql.org/docs/current/runtime.html). Basically,
-use `initdb` and `postgres` command to initialize data directory and start a
-postmaster process. It also mention the wrapper program `pg_ctl` which can be
-used instead of running `initdb` or `postgres` directly. The source code is
+it provides `initdb` and `postgres` commands to initialize data directory and
+start a postmaster process. It also mentions the wrapper program `pg_ctl` which
+can be used instead of running `initdb` or `postgres` directly. The source code
+is
 [here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_ctl/pg_ctl.c#L2459).
-I am a little surprised by this wrapper because I uses
+I am a little surprised by this wrapper because it uses
 [system(cmd)](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_ctl/pg_ctl.c#L915)
 or
 [/bin/sh](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_ctl/pg_ctl.c#L496)
 to run the wrapped command. Why not just call the relevant entry functions of
 the wrapped command?
+
+Things becomes a little more convoluted in Debian and Redhat. When you run
+`apt install postgres`, it also installs a dependency
+[postgresql-common](https://github.com/credativ/postgresql-common). Basically,
+it is a wrapper on top of `pg_ctl` and enables us to manage different postgres
+cluster wit the same or different versions. How does this shim layer work?
 
 We need some sample data. [sakila](https://github.com/jOOQ/sakila/tree/main) is
 a popular data set.
