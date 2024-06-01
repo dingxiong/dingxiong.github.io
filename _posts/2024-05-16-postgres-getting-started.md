@@ -17,6 +17,19 @@ bear -- make -j6
 cd .. && ln -s build_dir/compile_commands.json compile_commands.json
 ```
 
+Postgres documents the progress of creating and starting a postgres database
+[in detail](https://www.postgresql.org/docs/current/runtime.html). Basically,
+use `initdb` and `postgres` command to initialize data directory and start a
+postmaster process. It also mention the wrapper program `pg_ctl` which can be
+used instead of running `initdb` or `postgres` directly. The source code is
+[here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_ctl/pg_ctl.c#L2459).
+I am a little surprised by this wrapper because I uses
+[system(cmd)](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_ctl/pg_ctl.c#L915)
+or
+[/bin/sh](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_ctl/pg_ctl.c#L496)
+to run the wrapped command. Why not just call the relevant entry functions of
+the wrapped command?
+
 We need some sample data. [sakila](https://github.com/jOOQ/sakila/tree/main) is
 a popular data set.
 
