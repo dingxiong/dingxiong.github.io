@@ -6,6 +6,10 @@ categories: [database, postgres]
 tags: [postgres]
 ---
 
+Postgres is wonderful piece of software!
+
+## Set up Postgres
+
 Refer to <https://www.postgresql.org/docs/devel/installation.html> to build
 from source.
 
@@ -36,6 +40,19 @@ Things becomes a little more convoluted in Debian and Redhat. When you run
 [postgresql-common](https://github.com/credativ/postgresql-common). Basically,
 it is a wrapper on top of `pg_ctl` and enables us to manage different postgres
 cluster wit the same or different versions. How does this shim layer work?
+Let's see a few postgres commands.
+
+```
+> ll /usr/bin/createuser
+lrwxrwxrwx 1 root root 37 Oct  2  2023 /usr/bin/createuser -> ../share/postgresql-common/pg_wrapper
+
+> ll /usr/bin/psql
+lrwxrwxrwx 1 root root 37 Oct  2  2023 /usr/bin/psql -> ../share/postgresql-common/pg_wrapper
+```
+
+So `gp_wrapper` is the shim layer. It is a Perl file that routes the original
+command to the binary under
+[/usr/lib/postgresql/_version_/bin](https://github.com/credativ/postgresql-common/blob/55cb147cff7d2d764c7733ecb8a220378cb83fb5/PgCommon.pm#L629).
 
 We need some sample data. [sakila](https://github.com/jOOQ/sakila/tree/main) is
 a popular data set.
