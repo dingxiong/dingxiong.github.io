@@ -54,8 +54,8 @@ So `gp_wrapper` is the shim layer. It is a Perl file that routes the original
 command to the binary under
 [/usr/lib/postgresql/_version_/bin](https://github.com/credativ/postgresql-common/blob/55cb147cff7d2d764c7733ecb8a220378cb83fb5/PgCommon.pm#L629).
 
-We need some sample data. [sakila](https://github.com/jOOQ/sakila/tree/main) is
-a popular data set.
+Finally, we need some sample data.
+[sakila](https://github.com/jOOQ/sakila/tree/main) is a popular data set.
 
 ```
 git clone git@github.com:jOOQ/sakila.git --depth=1
@@ -72,6 +72,47 @@ test=# insert into actor (first_name, last_name) values ('x', 'y'), ('z', 'w') r
 
 INSERT 0 2
 ```
+
+### Configurations
+
+The main configuration file is `postgresql.conf`. I thought Postgres reads it
+as a plain text file and splits each line to a key value pair. Also, a line is
+a comment if it starts with `#`. No way! Postgres always shows off in
+unexpected ways. The configuration grammar is defined using
+[Lex & Yacc](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/utils/misc/guc-file.l#L94)!
+
+```
+\n				ConfigFileLineno++; return GUC_EOL;
+[ \t\r]+		/* eat whitespace */
+#.*				/* eat comment (.* matches anything until newline) */
+
+{ID}			return GUC_ID;
+{QUALIFIED_ID}	return GUC_QUALIFIED_ID;
+{STRING}		return GUC_STRING;
+{UNQUOTED_STRING} return GUC_UNQUOTED_STRING;
+{INTEGER}		return GUC_INTEGER;
+{REAL}			return GUC_REAL;
+=				return GUC_EQUALS;
+
+.				return GUC_ERROR;
+
+```
+
+Basically, integer, real number and string are recognized. "=" is parsed as
+equal token. White spaces including tab and `\r` are ignored. Anything after
+`#` is considered as comments and is ignored.
+
+What if the same key shows up multiple times? The
+[documentation](https://www.postgresql.org/docs/current/config-setting.html)
+clearly says
+
+> If the file contains multiple entries for the same parameter, all but the
+> last one are ignored.
+
+The code is
+[here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/utils/misc/guc.c#L405).
+It is funny that all of them are kept, but just all except the last one have
+`ignore=True`.
 
 ## binary file
 
