@@ -98,9 +98,9 @@ unexpected ways. The configuration grammar is defined using
 
 ```
 
-Basically, integer, real number and string are recognized. "=" is parsed as
-equal token. White spaces including tab and `\r` are ignored. Anything after
-`#` is considered as comments and is ignored.
+Integer, real number and string are recognized. "=" is parsed as equal token.
+White spaces including tab and `\r` are ignored. Anything after `#` is
+considered as comments and is ignored.
 
 What if the same key shows up multiple times? The
 [documentation](https://www.postgresql.org/docs/current/config-setting.html)
@@ -111,7 +111,7 @@ clearly says
 
 The code is
 [here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/utils/misc/guc.c#L405).
-It is funny that all of them are kept, but just all except the last one have
+It is funny that all of them are kept, but all except the last one have
 `ignore=True`.
 
 ## binary file
