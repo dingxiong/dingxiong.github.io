@@ -22,13 +22,13 @@ exception shows up. I thought I am clever because `f.result()`
 [throws](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Lib/concurrent/futures/_base.py#L401)
 if the future has exception, so the program terminates early. However, what I
 observed was that the thread pool continued running. More and more s3 files
-were downloaded even if some of the jobs failed. The program seems to have get
+were downloaded even if some of the jobs failed. The program seemed to have get
 stuck at `f.result()`.
 
-After some time of debugging, I realized that `f.result()` is not the problem.
+After debugging for some time, I realized that `f.result()` is not the problem.
 It indeed threw an exception, but then it runs `ThreadPoolExecutor.__exit__`,
-which calls `self.shutdown(wait=True)`. It is wait joining all threads and this
-part got stuck!
+which calls `self.shutdown(wait=True)`. It was waiting for all threads to join
+and this part got stuck!
 
 OK. I came up with a quick fix.
 
@@ -43,9 +43,9 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
 ```
 
 Parameter `cancel_futures=True` is critical. If not set, it gets stuck too.
-This seems like an acceptable solution. But it is quite verbose. I do not think
-I am the only want to achieve this behavior, so maybe there is already a more
-elegant way?
+This looks like an acceptable solution. But it is quite verbose. I do not think
+I am the only one who wants to achieve this behavior, so there should be a more
+elegant approach?
 
 Finally, I came cross function
 [map](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Lib/concurrent/futures/_base.py#L583).
