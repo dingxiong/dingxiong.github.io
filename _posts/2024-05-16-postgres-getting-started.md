@@ -198,7 +198,7 @@ How many processes are created during index creation? The entry point is
 and the call stack is
 
 ```
-index_buid
+index_build
   -> plan_create_index_workers
     -> compute_parallel_worker
 ```
@@ -227,3 +227,19 @@ and
 To make sure each process has at least 32MB, we cannot have more than 2
 processes. That is one leader process and one worker process. Personally, I
 think we should set `maintenance_work_mem` to at least 1GB.
+
+One final mark about index_build process. I am curious to know Postgres forks
+these worker processes and then join these processes. What I found is this
+[line](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1423).
+Postgres builds some wrapper on top multi-processors. After creating this
+`ParallelContext`, it calls
+[LaunchParallelWorkers(pcxt)](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1570)
+and
+[WaitForParallelWorkersToAttach(pcxt)](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1600).
+All these makes sense. However, as you can see, it passes the function to run
+as a string when creating the parallel context. So how does it map this string
+to the real function? The answer is
+[LookupParallelWorkerFunction](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/transam/parallel.c#L1595).
+If first tries to find the function from a dictionary
+`InternalParallelWorkers`. If not found, then it calls `dlsym` to look up the
+function from some shared library. I am shocked!
