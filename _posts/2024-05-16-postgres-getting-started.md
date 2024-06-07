@@ -217,7 +217,7 @@ calculate the number of workers. For example, if table storage is less than
 one worker. It is very simple math. But this is not the end. See
 [code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/optimizer/plan/planner.c#L6807).
 
-This is where `maintenance_work_mem` plays a role. The main process and all
+This is where `maintenance_work_mem` plays a role. The leader process and all
 worker processes share a total `maintenance_work_mem` when scanning table and
 doing tuple sort. The default value `maintenance_work_mem` is 64MB. Suppose we
 have 3 workers, then each process can get 64/4=16MB memory. See
@@ -225,5 +225,5 @@ have 3 workers, then each process can get 64/4=16MB memory. See
 and
 [code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1827).
 To make sure each process has at least 32MB, we cannot have more than 2
-processes. That is one main process and one worker process. Personally, I think
-we should set `maintenance_work_mem` to at least 1GB.
+processes. That is one leader process and one worker process. Personally, I
+think we should set `maintenance_work_mem` to at least 1GB.
