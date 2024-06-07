@@ -225,5 +225,5 @@ have 3 workers, then each process can get 64/4=16MB memory. See
 and
 [code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1827).
 To make sure each process has at least 32MB, we cannot have more than 2
-processes. That is one main process and one worker process. Personally, I feel
+processes. That is one main process and one worker process. Personally, I think
 we should set `maintenance_work_mem` to at least 1GB.
