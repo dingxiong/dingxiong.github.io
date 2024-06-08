@@ -281,3 +281,26 @@ strings, time format, money format, and etc. Out of them, `LC_COLLATE` and
 - `LC_CTYPE`: `C` here stands for character. It specifies character
   classification and case conversion. For example, whether a character is digit
   or not? what is the corresponding upper case letter of a character?
+
+In postgres, `LC_COLLATE` and `LC_CTYPE` are fixed once a database is created.
+To check the current values,
+
+```
+admincoin=# show LC_COLLATE;
+-[ RECORD 1 ]-------
+lc_collate | C.UTF-8
+
+admincoin=# show LC_CTYPE;
+-[ RECORD 1 ]-----
+lc_ctype | C.UTF-8
+```
+
+Note, somehow `show LC_COLLATE` does not work in Aurora Postgres. We can
+directly query `pg_database`:
+
+```
+admincoin=# select datcollate, datctype from pg_database where datname = 'test';
+-[ RECORD 1 ]-------
+datcollate | C.UTF-8
+datctype   | C.UTF-8
+```
