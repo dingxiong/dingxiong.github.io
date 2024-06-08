@@ -246,7 +246,7 @@ function from some shared library. I am shocked!
 
 ## Locale
 
-Let's talk about locale first before jumping into its impact on Postgres.
+Let's talk about locale in general before jumping into locales in Postgres.
 
 We only talk about POSIX compliant systems. First, what is the locale of my
 MacOS?
@@ -279,5 +279,5 @@ strings, time format, money format, and etc. Out of them, `LC_COLLATE` and
 - `LC_COLLATE`: specifies the collation order. It controls how strings are
   compared and sorted.
 - `LC_CTYPE`: `C` here stands for character. It specifies character
-  classification and case conversion, such as whether is character is digit or
-  not, what is the corresponding upper case letter of a character, and etc.
+  classification and case conversion. For example, whether a character is digit
+  or not? what is the corresponding upper case letter of a character?
