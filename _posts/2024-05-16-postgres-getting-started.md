@@ -243,3 +243,41 @@ function by this string? The answer is
 If first tries to find the function from a dictionary
 `InternalParallelWorkers`. If not found, then it calls `dlsym` to look up the
 function from some shared library. I am shocked!
+
+## Locale
+
+Let's talk about locale first before jumping into its impact on Postgres.
+
+We only talk about POSIX compliant systems. First, what is the locale of my
+MacOS?
+
+```
+$ locale
+LANG="en_US.UTF-8"
+LC_COLLATE="en_US.UTF-8"
+LC_CTYPE="en_US.UTF-8"
+LC_MESSAGES="en_US.UTF-8"
+LC_MONETARY="en_US.UTF-8"
+LC_NUMERIC="en_US.UTF-8"
+LC_TIME="en_US.UTF-8"
+LC_ALL=
+```
+
+Locale has
+[format](https://docs.oracle.com/cd/E23824_01/html/E26033/glmbx.html)
+
+```
+language[_territory][.codeset][@modifier]
+```
+
+In my case, language is `en`, territory or country is United States. `codeset`
+is `UTF-8`. There is no modifier. `LC_COLLATE`, `LC_CTYPE` and etc are locale
+categories. They specify various cultural conventions/behaviors of characters,
+strings, time format, money format, and etc. Out of them, `LC_COLLATE` and
+`LC_CTYPE` are most relevant to Postgres.
+
+- `LC_COLLATE`: specifies the collation order. It controls how strings are
+  compared and sorted.
+- `LC_CTYPE`: `C` here stands for character. It specifies character
+  classification and case conversion, such as whether is character is digit or
+  not, what is the corresponding upper case letter of a character, and etc.
