@@ -8,7 +8,7 @@ tags: [postgres]
 
 Postgres is wonderful piece of software!
 
-## Set up Postgres
+## Set Up Postgres
 
 Refer to <https://www.postgresql.org/docs/devel/installation.html> to build
 from source.
@@ -62,15 +62,6 @@ git clone git@github.com:jOOQ/sakila.git --depth=1
 psql -d test -f ~/code/sakila/postgres-sakila-db/postgres-sakila-schema.sql
 psql -d test -f ~/code/sakila/postgres-sakila-db/postgres-sakila-insert-data.sql
 psql test
-
-test=# insert into actor (first_name, last_name) values ('x', 'y'), ('z', 'w') returning actor_id, last_update;
- actor_id |        last_update
-----------+----------------------------
-      204 | 2024-06-01 00:16:58.206651
-      205 | 2024-06-01 00:16:58.206651
-(2 rows)
-
-INSERT 0 2
 ```
 
 ### Configurations
@@ -114,7 +105,9 @@ The code is
 It is funny that all of them are kept, but all except the last one have
 `ignore=True`.
 
-## binary file
+## Various Binaries
+
+### Import From Binary File
 
 Postgres only supports importing data from text, csv and binary files. The
 binary protocol is covered briefly
@@ -148,7 +141,121 @@ follows is
 The `00 00 00 08` in the second line designates another timestamp. Note, there
 are a lot `ff` bytes follows. These `-1` values denote NULL values.
 
-## Toast storage
+### Page Layout
+
+Postgres has a good documentation about
+[Database Page Layout](https://www.postgresql.org/docs/current/storage-page-layout.html).
+The diagram in the
+[source code comment](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/include/storage/bufpage.h#L29)
+is super helpful too. Let's look at an example.
+
+First, create the table and insert sample data.
+
+```
+CREATE TABLE my_table(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    age INT
+);
+
+CREATE INDEX idx_name ON my_table (name);
+
+INSERT INTO my_table (name, age) VALUES
+('Alice', 30),
+('bob', 25),
+('Charlie', 35),
+('Diana', 28),
+('Edward', 40);
+```
+
+Second, Run `CHECKPOINT` and restart Postgres. Why? The DDL/DML changes above
+are written to WAL, but WAL is not merged into the data files yet. The merging
+process is done periodically and the frequency is controlled by some
+configuration parameters. To manually trigger this process, we can create a
+checkpoint and then restart Postgres such that it merges all changes before
+this checkpoint to the data files. The corresponding data file is below
+
+```
+> sudo hexdump -C  /var/lib/postgresql/13/main/base/1638340/2481266
+00000000  76 01 00 00 b0 f3 03 7f  00 00 00 00 2c 00 38 1f  |v...........,.8.|
+00000010  00 20 04 20 00 00 00 00  d8 9f 50 00 b0 9f 48 00  |. . ......P...H.|
+00000020  88 9f 50 00 60 9f 50 00  38 9f 50 00 00 00 00 00  |..P.`.P.8.P.....|
+00000030  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+*
+00001f30  00 00 00 00 00 00 00 00  4d e3 07 00 00 00 00 00  |........M.......|
+00001f40  00 00 00 00 00 00 00 00  05 00 03 00 02 09 18 00  |................|
+00001f50  05 00 00 00 0f 45 64 77  61 72 64 00 28 00 00 00  |.....Edward.(...|
+00001f60  4d e3 07 00 00 00 00 00  00 00 00 00 00 00 00 00  |M...............|
+00001f70  04 00 03 00 02 09 18 00  04 00 00 00 0d 44 69 61  |.............Dia|
+00001f80  6e 61 00 00 1c 00 00 00  4d e3 07 00 00 00 00 00  |na......M.......|
+00001f90  00 00 00 00 00 00 00 00  03 00 03 00 02 09 18 00  |................|
+00001fa0  03 00 00 00 11 43 68 61  72 6c 69 65 23 00 00 00  |.....Charlie#...|
+00001fb0  4d e3 07 00 00 00 00 00  00 00 00 00 00 00 00 00  |M...............|
+00001fc0  02 00 03 00 02 09 18 00  02 00 00 00 09 62 6f 62  |.............bob|
+00001fd0  19 00 00 00 00 00 00 00  4d e3 07 00 00 00 00 00  |........M.......|
+00001fe0  00 00 00 00 00 00 00 00  01 00 03 00 02 09 18 00  |................|
+00001ff0  01 00 00 00 0d 41 6c 69  63 65 00 00 1e 00 00 00  |.....Alice......|
+00002000
+```
+
+The first 24 bytes are `PageHeaderData`. You can see that
+
+```
+pd_lower = 0x002c
+pd_upper = 0x1f38
+pd_special = 0x2000
+pd_pagesize = 0x2004 && 0xFF00 = 0x2000 = 8192
+version = 0x2004 && 0x00FF = 4
+```
+
+Note that my MacBook M1, namely, AArch64, is a little-endian CPU, so we
+interpret `2c 00` as `0x002c`. As you can see, the default page size in
+Postgres is 8KB. Also this is the
+[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/include/storage/bufpage.h#L274)
+to split page size and version.
+
+The bytes between the end of `PageHeaderData` and `pd_lower` are
+[ItemIdData](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/include/storage/itemid.h#L25).
+They are pointers to the data tuples. The size of this part is
+`0x002c - 24 = 20` bytes. The content is extracted as follows.
+
+```
+> sudo hexdump -C -s 24 -n 20 /var/lib/postgresql/13/main/base/1638340/2481266
+00000018  d8 9f 50 00 b0 9f 48 00  88 9f 50 00 60 9f 50 00  |..P...H...P.`.P.|
+00000028  38 9f 50 00                                       |8.P.|
+```
+
+Each ItemIdData takes four bytes, so we have five items in total corresponding
+to the five tuples inserted. Let's take a look at one example `d8 9f 50 00`.
+The definition of ItemIdData is copied below
+
+```
+typedef struct ItemIdData
+{
+  unsigned  lp_off:15,		/* offset to tuple (from start of page) */
+            lp_flags:2,		/* state of line pointer, see below */
+            lp_len:15;		/* byte length of tuple */
+} ItemIdData;
+```
+
+How to only get the first 15 bits of the first 2 bytes? Actually, I am lost for
+this niche detail. This is how I make sense of these bits: `d8 9f` should be
+thought as `0x9fd8`, and `9 = 1001`, so I strip off the first bit of `9` to get
+`0x1fd8`. For size `0x0050 = 1010000`, `5 = 101`, and I strip off the last bit
+to get `100`, so the reals size is `0x0040`. So the first entry starts at
+`0x1fd8` and takes 40 bytes.
+
+```
+> sudo hexdump -C -s 0x1f38 -n 40 /var/lib/postgresql/13/main/base/1638340/2481266
+00001f38  4d e3 07 00 00 00 00 00  00 00 00 00 00 00 00 00  |M...............|
+00001f48  05 00 03 00 02 09 18 00  05 00 00 00 0f 45 64 77  |.............Edw|
+00001f58  61 72 64 00 28 00 00 00                           |ard.(...|
+```
+
+You can get the rest of the tuples. Forgive me! I need to read more about this
+detail.
+
+### Toast Storage
 
 TODO: learn it
 
@@ -304,3 +411,70 @@ admincoin=# select datcollate, datctype from pg_database where datname = 'test';
 datcollate | C.UTF-8
 datctype   | C.UTF-8
 ```
+
+### How Does Collation Affect Index Layout?
+
+As you can imagine, collation affects how tuples are compared it, so it affect
+the page layout of indices. We can do a quick experiment. I am lazy to make a
+new collation, but instead I choose to use type `CITEXT` to illustrate the
+idea. `CITEXT` is case-insensitive text date type. It is equivalent to a
+case-insensitive collation.
+
+First, set up the schemas and data.
+
+```
+CREATE TABLE my_table(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    age INT
+);
+CREATE INDEX idx_name ON my_table (name);
+
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE TABLE my_table_2(
+    id SERIAL PRIMARY KEY,
+    name CITEXT NOT NULL,
+    age INT
+);
+CREATE INDEX idx_name_2 ON my_table_2 (name);
+
+INSERT INTO my_table (name, age) VALUES
+('Alice', 30),
+('bob', 25),
+('Charlie', 35),
+('Diana', 28),
+('Edward', 40);
+
+INSERT INTO my_table_2 (name, age) VALUES
+('Alice', 30),
+('bob', 25),
+('Charlie', 35),
+('Diana', 28),
+('Edward', 40);
+```
+
+You can see that I deliberately make `bob` all lower cases. Second, do a
+`CHECKPOINT` and restart postgres. Let's check the data file content.
+
+![citext_diff](/assets/images/pg_citex_bin_diff.png)
+
+The left side is the data file of `idx_name` and the right side is the date
+file of `idx_name_2`. There are two pages for each case. The first page is
+special. It is called
+[meta page](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/include/access/nbtree.h#L97).
+This meta page contains information about the page number of the btree root,
+the height of the btree, and etc. In our case, the root page number is 1 and
+height is 1. It makes sense as there are only 5 tuples. The root page itself
+can hold all of them.
+
+Let's focus on the second page. The row `00003ff0` corresponds to
+[BTPageOpaqueData](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/include/access/nbtree.h#L62).
+The flag field is `03` meaning this is the root page and also a leaf page. Five
+tuples are inserted to a page backwardly starting from larger offset. That is
+why you see the names are from `Edward` to `Alice`. Let's check the difference
+of the 2nd page for these two indices. Note, inside an index page, `ItemIdData`
+array is sorted corresponding to the tuples they point to. This order is the
+prerequisite that you can do a binary search inside a btree node. Whenever you
+insert a new tuple in this page, db should maintain this invariant. You can see
+[more detail](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsearch.c#L337)
+about how Postgres does binary search on this `ItemIdData` array.
