@@ -7,6 +7,11 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-06-10 Mon
+
+TIL: popcnt is a CPU instruction to count the number of 1's in a binary word.
+C++ has a function for it <https://en.cppreference.com/w/cpp/numeric/popcount>.
+
 ## 2024-05-31 Fri
 
 After upgrading MacOS, nerds fonts refused to work. After a quick search
