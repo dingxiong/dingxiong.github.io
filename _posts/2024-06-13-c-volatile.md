@@ -6,11 +6,11 @@ categories: [programming-language, c]
 tags: [volatile]
 ---
 
-When using GCC and add breakpoint to a specific location, I am worried
-sometimes that this piece of code will be optimized away by compiler. Disabling
+When using GCC to add breakpoint to a specific location, sometimes I am worried
+that this piece of code may be optimized away by the compiler. Disabling
 optimization can rule out my concern, but I also wonder whether there is a
 language semantic that prohibits a line of code being optimized away. The
-answer is [volatile](https://barrgroup.com/blog/how-use-cs-volatile-keywordj).
+answer is [volatile](https://barrgroup.com/blog/how-use-cs-volatile-keyword).
 
 Let's do a simple experiment.
 
