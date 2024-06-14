@@ -24,7 +24,7 @@ int main() {
 
 `gcc -S test.c -03` generates below assembly in MacOS M1.
 
-```asm
+```
         .section        __TEXT,__text,regular,pure_instructions
         .build_version macos, 14, 0     sdk_version 14, 5
         .globl  _main                           ; -- Begin function main
@@ -49,7 +49,7 @@ volatile int meaning_of_life = 42;
 
 we get below assembly
 
-```asm
+```
         .section        __TEXT,__text,regular,pure_instructions
         .build_version macos, 14, 0     sdk_version 14, 5
         .globl  _main                           ; -- Begin function main
