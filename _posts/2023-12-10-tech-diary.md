@@ -7,6 +7,14 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-06-17 Mon
+
+"You have to win the roadmap." -- Lisa Su
+
+## 2024-06-12 Mon
+
+TIL: https://github.com/rr-debugger/rr
+
 ## 2024-06-10 Mon
 
 TIL: popcnt is a CPU instruction to count the number of 1's in a binary word.

@@ -10,17 +10,6 @@ Postgres is wonderful piece of software!
 
 ## Set Up Postgres
 
-Refer to <https://www.postgresql.org/docs/devel/installation.html> to build
-from source.
-
-```bash
-mkdir build_dir
-cd build_dir
-../configure --without-icu
-bear -- make -j6
-cd .. && ln -s build_dir/compile_commands.json compile_commands.json
-```
-
 Postgres documents the progress of creating and starting a postgres database
 [in detail](https://www.postgresql.org/docs/current/runtime.html). Basically,
 it provides `initdb` and `postgres` commands to initialize data directory and
@@ -35,11 +24,27 @@ or
 to run the wrapped command. Why not just call the relevant entry functions of
 the wrapped command?
 
+### MacOS
+
+Just use homebrew to install Postgres.
+
+### Linux
+
+```bash
+# Install the default version
+sudo apt-get intall postgres
+
+# Install a newer version
+sudo apt-get install -y postgresql-common
+sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+sudo apt-get install -y postgresql-16
+```
+
 Things becomes a little more convoluted in Debian and Redhat. When you run
 `apt install postgres`, it also installs a dependency
 [postgresql-common](https://github.com/credativ/postgresql-common). Basically,
 it is a wrapper on top of `pg_ctl` and enables us to manage different postgres
-cluster wit the same or different versions. How does this shim layer work?
+cluster with the same or different versions. How does this shim layer work?
 Let's see a few postgres commands.
 
 ```
@@ -54,6 +59,43 @@ So `gp_wrapper` is the shim layer. It is a Perl file that routes the original
 command to the binary under
 [/usr/lib/postgresql/_version_/bin](https://github.com/credativ/postgresql-common/blob/55cb147cff7d2d764c7733ecb8a220378cb83fb5/PgCommon.pm#L629).
 
+### Build From Source
+
+Refer to <https://www.postgresql.org/docs/devel/installation.html> to build
+from source.
+
+```bash
+mkdir build_dir
+cd build_dir
+
+# We need to provide installation prefix because the binary generated
+# reference symbols in the default installation folder.
+../configure --without-icu --prefix $HOME/code/postgres/build_dir/install_dir
+# or for debug build
+./configure ---without-icu --enable-cassert --enable-debug CFLAGS="-ggdb -Og -g3 -fno-omit-frame-pointer" -prefix $HOME/code/postgres/build_dir/install_dir
+
+# make
+bear -- make -j6
+cd .. && ln -s build_dir/compile_commands.json compile_commands.json
+cd build_dir
+
+# install
+make install
+
+# create a cluster
+mkdir data
+./install_dir/bin/initdb -D $HOME/code/postgres/build_dir/data
+
+# start server using a different port
+./install_dir/bin/postgres -D $HOME/code/postgres/build_dir/data -p 5433
+
+# connect to sever and create test database
+./install_dir/bin/psql postgres -p 5433
+postgres=# create database test2;
+```
+
+### Sample Data
+
 Finally, we need some sample data.
 [sakila](https://github.com/jOOQ/sakila/tree/main) is a popular data set.
 
@@ -62,6 +104,18 @@ git clone git@github.com:jOOQ/sakila.git --depth=1
 psql -d test -f ~/code/sakila/postgres-sakila-db/postgres-sakila-schema.sql
 psql -d test -f ~/code/sakila/postgres-sakila-db/postgres-sakila-insert-data.sql
 psql test
+```
+
+### Debugger
+
+https://github.com/tvondra/gdbpg
+
+```
+$ lldb -- ./install_dir/bin/postgres -D $HOME/code/postgres/build_dir/data -p 5433
+(lldb) b sql/sql_optimizer.cc:5875
+Breakpoint 1: where = mysqld`JOIN::estimate_rowcount() + 44 at sql_optimizer.cc:5875:37, address = 0x0000000100a2c4d8
+(lldb) process launch -n
+Process 4071 launched: '/Users/xiongding/code/mysql-server/build/bin/mysqld' (arm64)
 ```
 
 ### Configurations
@@ -254,6 +308,30 @@ to get `100`, so the reals size is `0x0040`. So the first entry starts at
 
 You can get the rest of the tuples. Forgive me! I need to read more about this
 detail.
+
+### How Are Data Types Serialized To Pages?
+
+```
+=# select oid, typname, typlen, typbyval, typalign, typstorage from pg_type where typname in ('varchar', 'int2', 'int4', 'char', 'bool', 'bytea', 'float8', 'text', 'uuid', 'timestamp', 'timestamptz', 'date');
+ oid  |   typname   | typlen | typbyval | typalign | typstorage
+------+-------------+--------+----------+----------+------------
+   16 | bool        |      1 | t        | c        | p
+   17 | bytea       |     -1 | f        | i        | x
+   18 | char        |      1 | t        | c        | p
+   21 | int2        |      2 | t        | s        | p
+   23 | int4        |      4 | t        | i        | p
+   25 | text        |     -1 | f        | i        | x
+  701 | float8      |      8 | t        | d        | p
+ 1043 | varchar     |     -1 | f        | i        | x
+ 1082 | date        |      4 | t        | i        | p
+ 1114 | timestamp   |      8 | t        | d        | p
+ 1184 | timestamptz |      8 | t        | d        | p
+ 2950 | uuid        |     16 | f        | c        | p
+```
+
+https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/include/varatt.h#L142
+
+https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/common/indextuple.c#L65
 
 ### Toast Storage
 
