@@ -14,9 +14,9 @@ tags: [datadog]
 
 Autodiscovery integration It provides a lot of integrations for popular tools,
 applications to collect their metrics and logs. See
-https://docs.datadoghq.com/agent/kubernetes/integrations/?tab=kubernetes and
-https://github.com/DataDog/integrations-core. However, I followed with the doc
-above to set up a customized metric integration. It did not work. The error
+<https://docs.datadoghq.com/agent/kubernetes/integrations/?tab=kubernetes> and
+<https://github.com/DataDog/integrations-core>. However, I followed with the
+doc above to set up a customized metric integration. It did not work. The error
 message is
 
 ```
