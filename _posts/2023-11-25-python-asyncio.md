@@ -716,7 +716,7 @@ There are some
 about propagating changes back to the parent context. I kind of feel this
 request is absurd. Anyway, I solved my problem by copying datadog's design.
 
-```
+```python
 import contextvars
 import dataclasses
 from contextlib import contextmanager
@@ -751,3 +751,109 @@ def exit() -> None:
 
 Now. we can use `enter` and `exit` in different context and it will work
 correctly.
+
+## Synchronization
+
+We need to control the concurrency sometimes. For example, if there is a limit
+of the number of active database connections, then `asyncio.gather` is better
+not gather too many coroutines. `asyncio.Semaphore` can effectively solve this
+problem. See [post](https://stackoverflow.com/a/50309198/3183330).
+
+However, this is still a problem given below code
+
+```python
+    import asyncio
+
+    count = 0
+    MAX_CONCURRENCY = 5
+
+    async def _gather(*coros):
+        semaphore = asyncio.Semaphore(MAX_CONCURRENCY)
+
+        async def _wrap_coro(coro):
+            async with semaphore:
+                return await coro
+
+        return await asyncio.gather(*(_wrap_coro(coro) for coro in coros))
+
+
+    async def t1():
+        global count
+        count += 1
+        print(f"{asyncio.current_task().get_name()} All tasks: {count}")
+        await asyncio.sleep(0.01)
+        count -= 1
+
+    async def t2():
+        await _gather(*[t1() for i in range(10)])
+
+    async def t3():
+        await _gather(*[t2() for i in range(10)])
+
+    await t3()
+```
+
+The output shows that as many as 25 coroutines can run concurrently. There are
+two nested `gather` in the code. So the total concurrency is `5 x 5 = 25`. The
+problem is that with each `gather` we create a new semaphore. If they share a
+global semaphore, will it be better?
+
+If you move the line `semaphore = asyncio.Semaphore(MAX_CONCURRENCY)` out of
+the function and run the code again, you will see that this code gets into
+deadlock. when `t3` schedules five coroutines, it cannot schedule the remaining
+five coroutines. Also, the scheduled coroutines cannot finish because each of
+them need to schedule another ten coroutines. This is similar to a stack
+overflow problem.
+
+OK. a global semaphore does not work? What else we can try? How about running
+the inner gather sequentially? It is not perfect. If the outer gather has only
+one or two coroutines, then we lose the benefit of `asyncio.gather`. First, how
+to decide if a gather is a nested or not. `ContextVar` is a perfect too for it.
+Second, writing a sequential version of `gather` sounds easy, but it may get
+complicated once error handling is involved. Remember `gather` has parameter
+called `return_exceptions`. See some discussion under
+[this post](https://stackoverflow.com/questions/61026643/sequential-version-of-asyncio-gather).
+
+Below is my final version.
+
+```python
+    import asyncio
+    from contextvars import ContextVar
+
+    count = 0
+    MAX_CONCURRENCY = 5
+    v = ContextVar("v", default=0)
+
+    async def _gather(*coros):
+        concurrency = MAX_CONCURRENCY
+        if v.get() > 0:
+            concurrency = 1
+        v.set(v.get() + 1)
+
+        try:
+            semaphore = asyncio.Semaphore(concurrency)
+
+            async def _wrap_coro(coro):
+                async with semaphore:
+                    return await coro
+
+            await asyncio.gather(*(_wrap_coro(coro) for coro in coros))
+        finally:
+            v.set(v.get() - 1)
+
+
+    async def t1():
+        global count
+        count += 1
+        print(f"{asyncio.current_task().get_name()} All tasks: {count}")
+        await asyncio.sleep(0.01)
+        count -= 1
+
+    async def t2():
+        await _gather(*[t1() for i in range(10)])
+
+    async def t3():
+        await _gather(*[t2() for i in range(10)])
+
+    await t3()
+```
