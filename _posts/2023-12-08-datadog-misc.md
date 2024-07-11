@@ -14,10 +14,10 @@ tags: [datadog]
 
 Autodiscovery integration It provides a lot of integrations for popular tools,
 applications to collect their metrics and logs. See
-<https://docs.datadoghq.com/agent/kubernetes/integrations/?tab=kubernetes> and
-<https://github.com/DataDog/integrations-core>. However, I followed with the
-doc above to set up a customized metric integration. It did not work. The error
-message is
+[doc](https://docs.datadoghq.com/agent/kubernetes/integrations/?tab=kubernetes)
+and [code](https://github.com/DataDog/integrations-core). However, I followed
+with the doc above to set up a customized metric integration. It did not work.
+The error message is
 
 ```
 2022-05-15 02:47:28 UTC | CORE | DEBUG | (pkg/collector/python/loader.go:148 in Load) | Unable to load python module - datadog_checks.python-test-123: unable to import module 'datadog_checks.python-test-123': No module named 'datadog_checks.python-test-123'
@@ -45,6 +45,121 @@ it is called in C program in
 
 All integrations have a corresponding `AgentCheck` class. From there, you can
 easily see what metrics are defined.
+
+OK. Then comes to the next question: where do these integrations run? I am
+using datadog installed in a K8S cluster using helm chart as an example. Some
+key configurations of this helm chart is as follows,
+
+```
+datadog:
+  clusterChecks:
+    enabled: true
+clusterAgent:
+  enabled: true
+  replicas: 2
+clusterChecksRunner:
+  enabled: true
+  replicas: 2
+```
+
+So we will have 2 cluster agents, 2 cluster checks runners and a few datadog
+agent forming a daemonset.
+
+```
+datadog-cluster-agent-665f97bdc7-8r84k        1/1     Running   0          9h
+datadog-cluster-agent-665f97bdc7-mxl6h        1/1     Running   0          9h
+datadog-clusterchecks-6b74dd667b-n4j78        1/1     Running   0          9h
+datadog-clusterchecks-6b74dd667b-rxjww        1/1     Running   0          9h
+datadog-cts4p                                 3/3     Running   0          3h3m
+datadog-d9jxn                                 3/3     Running   0          9h
+...
+```
+
+The daemonset pods are not interesting. There is an agent pod running in each
+node to collect node/pod specific metrics. Cluster agent and cluster checks
+runner are more interesting.
+
+[datadog-cluster-agent](https://github.com/DataDog/datadog-agent/blob/083a2213e83d8e845feceaae17f50b6753a95f98/cmd/cluster-agent/app/app.go#L60)
+runs in the cluster agent pod. Note, even we have two cluster agents in this
+setup. Only one is leader, the other is a stand-by. You can see which one is
+the leader by the `status` subcommand.
+
+```
+root@datadog-cluster-agent-665f97bdc7-8r84k:/# datadog-cluster-agent status
+...
+Leader Election
+===============
+  Leader Election Status:  Running
+  Leader Name is: datadog-cluster-agent-665f97bdc7-8r84k
+  Last Acquisition of the lease: Wed, 10 Jul 2024 17:55:32 UTC
+  Renewed leadership: Thu, 11 Jul 2024 03:17:05 UTC
+  Number of leader transitions: 220 transitions
+...
+```
+
+Cluster checks runners are kind of normal runners and just run `agent run`
+command inside it. However, they are used to monitor external resources and not
+tied to application nodes/pods, so they do not form a daemonset. Cluster agent
+figures out how many `AgentCheck` jobs and dispatch these jobs to cluster
+checks runners. For example, in this example setting, support we have three
+check jobs: Mysql metrics, Postgress metrics, and Elasticsearch metrics, then
+cluster agent may dispatch Mysql and Postgres check jobs to cluster checks
+runner #1 and Elasticsearch check job to cluster checks runner #2. We can check
+the task distribution as follows:
+
+```
+root@datadog-cluster-agent-665f97bdc7-8r84k:/# datadog-cluster-agent clusterchecks
+=== 2 agents reporting ===
+
+Name                                     Running checks
+datadog-clusterchecks-6b74dd667b-n4j78   1
+datadog-clusterchecks-6b74dd667b-rxjww   2
+
+===== Checks on datadog-clusterchecks-6b74dd667b-n4j78 =====
+
+=== elastic check ===
+...
+===
+
+===== Checks on datadog-clusterchecks-6b74dd667b-rxjww =====
+
+=== mysql check ===
+...
+===
+
+=== postgres check ===
+...
+===
+...
+```
+
+Here is a
+[diagram](https://github.com/DataDog/datadog-agent/blob/083a2213e83d8e845feceaae17f50b6753a95f98/pkg/clusteragent/clusterchecks/README.md#L30)
+illustrates the relationship.
+
+### Postgres Integration
+
+Datadog Postgres integration has the ability to run explanation on sample
+queries.
+
+First, what are the sample queries? These are queries captured in side
+`pg_stat_activity`.
+
+Second, how does it run the `explain` statement? Datadog requires you setting
+up a function `datadog.explain_statement` to run the `explain` statement. See
+[instruction](https://docs.datadoghq.com/database_monitoring/setup_postgres/aurora/?tab=kubernetes)
+and
+[code](https://github.com/DataDog/integrations-core/blob/6ba6a69f98c64679ed06e0e92c8e96fbaadc3287/postgres/datadog_checks/postgres/statement_samples.py#L173).
+Note, we must create this function in every database we want to capture the
+queries. Datadog has a step to test whether this function exist or not. If not,
+it will exit early. See
+[code](https://github.com/DataDog/integrations-core/blob/6ba6a69f98c64679ed06e0e92c8e96fbaadc3287/postgres/datadog_checks/postgres/statement_samples.py#L605).
+Below are some error logs captured because of this mistake.
+
+```
+2024-07-11 01:43:01 UTC | CORE | WARN | (pkg/collector/python/datadog_agent.go:124 in LogMessage) | postgres:14bfc3bc7d98044a | (statement_samples.py:449) | cannot collect execution pl
+ans due to invalid schema in dbname=admincoin: InvalidSchemaName('schema "datadog" does not exist\nLINE 1: SELECT datadog.explain_statement($stmt$SELECT * FROM pg_stat...\n               ^\n')
+```
 
 ## APM
 

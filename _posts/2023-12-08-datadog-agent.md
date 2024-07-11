@@ -85,3 +85,25 @@ type logLine struct {
 Here, `stream` is either `stderr` or `stdout`, and datadog uses this field to
 determine if the log level is an error or info, so you application's log stream
 channel matters!
+
+## Configuration
+
+### Template Variables
+
+Datadog agent can use template variables in its configuration file. These
+configurations will be resolved dynamically. This is a new feature introduced
+in v6.1. See the list of common template variables
+[here](https://docs.datadoghq.com/containers/guide/template_variables/).
+
+[I am using `!` to stand for `%`. My stupid blog template system does not allow
+`%%`. v_v]
+
+The most used template variable is environment variable `!!env_{...}!!`. The
+implementation is
+[here](https://github.com/DataDog/datadog-agent/blob/083a2213e83d8e845feceaae17f50b6753a95f98/pkg/autodiscovery/configresolver/configresolver.go#L172)
+and
+[here](https://github.com/DataDog/datadog-agent/blob/083a2213e83d8e845feceaae17f50b6753a95f98/pkg/util/tmplvar/parse.go#L14).
+So it is a simple regex match. This also means that you cannot nest template
+variables like `!!env_{!!env_{..}!!}!!`. Why I mention this? Because Java
+programmers are so fascinated with nested template variables. Pick some Spring
+code, you will find a lot. Good for them.
