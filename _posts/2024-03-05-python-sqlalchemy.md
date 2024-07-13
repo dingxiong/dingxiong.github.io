@@ -187,3 +187,20 @@ l =  asyncio.get_event_loop()
 x = l.run_until_complete(async_db.session.connection())
 x.sync_connection._dbapi_connection.dbapi_connection._connection._connection
 ```
+
+## Alembic
+
+Alembic is the database migration tool based on sqlalchemy.
+
+`alembic downgrade -1` reverts current revision. How does alembic interpret
+`-1`? The call stack is
+
+```
+command.downgrade
+  -> script.base._downgrade_revs
+    -> script.revision._collect_downgrade_revisions
+      -> script.revision._parse_downgrade_target
+```
+
+It uses a regular expression to parse str with format `branch@symbol@relative`,
+so `-1` corresponds to `branch = None, symbol = None, relative = -1`.
