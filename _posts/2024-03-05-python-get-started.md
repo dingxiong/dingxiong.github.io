@@ -135,13 +135,13 @@ For pytest, you can use below command to automatically drop into ipython shell.
 pytest --pdbcls=IPython.terminal.debugger:TerminalPdb
 ```
 
-For multithreading programs. Neither pdb or `IPython.embed` works well. Suppose
+For multithreading programs, neither pdb or `IPython.embed` works well. Suppose
 you add a breakpoint at the same location in 3 threads, then once the
 breakpoint is hit, 3 pdb instances are created, and when you type some command
 in one pdb console and hit enter, it jumps to the pdb instance in another
 thread, which is very confusing. `Ipython.embed` is worse in this case. It
-throws exception and get stuck and needs `kill -9` to stop it. The community
-has been asking for stopping all threads behavior for a long time. See this
+throws exception, gets stuck and needs `kill -9` to stop it. The community has
+been asking for stopping all threads behavior for a long time. See this
 [stackoverflow answer](https://stackoverflow.com/a/64678235/3183330).
 
 One way to walk around this issue is using a global thread lock.
