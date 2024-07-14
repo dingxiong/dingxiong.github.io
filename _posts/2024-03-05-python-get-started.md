@@ -153,8 +153,11 @@ _lock = threading.Lock()
 
 with _lock:
   breakpoint()
+  assert 1 == 1
 ...
 ```
+
+`assert 1 == 1` above prevents the stack goes out of the lock.
 
 ### Attach to a python process
 
