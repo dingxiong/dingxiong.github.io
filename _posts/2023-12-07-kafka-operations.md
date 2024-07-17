@@ -92,6 +92,7 @@ kafkacat -L -b $BOOTSTRAP_SERVERS
 
 ./bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 --generate --broker-list 0,1,2 --topics-to-move-json-file /home/kafka/topics.json
 ./bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 --execute --reassignment-json-file /home/kafka/reassignment.json
+./bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 --verify --reassignment-json-file /home/kafka/reassignment.json
 ```
 
 ## run a kafka consumer
