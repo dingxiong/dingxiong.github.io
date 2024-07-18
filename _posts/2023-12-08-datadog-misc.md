@@ -161,6 +161,104 @@ Below are some error logs captured because of this mistake.
 ans due to invalid schema in dbname=admincoin: InvalidSchemaName('schema "datadog" does not exist\nLINE 1: SELECT datadog.explain_statement($stmt$SELECT * FROM pg_stat...\n               ^\n')
 ```
 
+### kubernetes Integration
+
+How to get cluster name?
+
+When cluster agent starts, it tries to auto detect
+[cluster name](https://github.com/DataDog/datadog-agent/blob/083a2213e83d8e845feceaae17f50b6753a95f98/cmd/cluster-agent/app/app.go#L266).
+For AWS, what it actually does it calling the instance metadata endpoint
+
+```
+curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"
+
+curl http://169.254.169.254/latest/dynamic/instance-identity/document -H "X-aws-ec2-metadata-token: AQAEAEH8bTZXavSdO5XMdOi0iJXNML14UiVC1ZkHwbOppKdUZr9vXQ=="
+{
+  "accountId" : "242230929264",
+  "architecture" : "x86_64",
+  "availabilityZone" : "us-east-2b",
+  "billingProducts" : null,
+  "devpayProductCodes" : null,
+  "marketplaceProductCodes" : null,
+  "imageId" : "ami-0f98fd42429c01a3c",
+  "instanceId" : "i-03cc7ea13c98d1906",
+  "instanceType" : "t3.xlarge",
+  "kernelId" : null,
+  "pendingTime" : "2024-07-16T21:13:33Z",
+  "privateIp" : "172.31.79.158",
+  "ramdiskId" : null,
+  "region" : "us-east-2",
+  "version" : "2017-09-30"
+}
+
+aws ec2 describe-tags --filters Name=resource-id,Values=i-03cc7ea13c98d1906 --profile=admin
+{
+    "Tags": [
+        {
+            "Key": "aws:autoscaling:groupName",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "eks-ng-system-56c62341-1b39-1572-903a-f061ad1ed353"
+        },
+        {
+            "Key": "aws:ec2launchtemplate:id",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "lt-0ddcba2c6b2b08aa2"
+        },
+        {
+            "Key": "aws:ec2launchtemplate:version",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "3"
+        },
+        {
+            "Key": "aws:eks:cluster-name",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "evergreen"
+        },
+        {
+            "Key": "eks:cluster-name",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "evergreen"
+        },
+        {
+            "Key": "eks:nodegroup-name",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "ng-system"
+        },
+        {
+            "Key": "k8s.io/cluster-autoscaler/enabled",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "true"
+        },
+        {
+            "Key": "k8s.io/cluster-autoscaler/evergreen",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "owned"
+        },
+        {
+            "Key": "kubernetes.io/cluster/evergreen",
+            "ResourceId": "i-03cc7ea13c98d1906",
+            "ResourceType": "instance",
+            "Value": "owned"
+        }
+    ]
+}
+```
+
+IP 169.254.169.254 is a special
+[internal IP](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instancedata-data-retrieval.html#instance-metadata-returns).
+I talked about this IP in the k8s notes as well. So basically, you can get the
+cluster name and other info from inside cluster agent. However, the current
+implementation does not work because it lacks the step to obtain the token,
+then the instance metadata call fails with a 401 error.
+
 ## APM
 
 APM concepts:
