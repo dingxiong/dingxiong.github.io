@@ -161,6 +161,8 @@ Below are some error logs captured because of this mistake.
 ans due to invalid schema in dbname=admincoin: InvalidSchemaName('schema "datadog" does not exist\nLINE 1: SELECT datadog.explain_statement($stmt$SELECT * FROM pg_stat...\n               ^\n')
 ```
 
+### Kafka Integration
+
 ### kubernetes Integration
 
 How to get cluster name?
