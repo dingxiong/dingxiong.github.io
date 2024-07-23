@@ -163,6 +163,13 @@ ans due to invalid schema in dbname=admincoin: InvalidSchemaName('schema "datado
 
 ### Kafka Integration
 
+Kafka has two types of integration: broker metric integration and consumer
+metric integration.
+
+The former requires the Kafka cluster has JMX enabled. The second uses an admin
+client to consumer offset, lag metric etc. See code
+[here](https://github.com/DataDog/integrations-core/blob/6ba6a69f98c64679ed06e0e92c8e96fbaadc3287/kafka_consumer/datadog_checks/kafka_consumer/kafka_consumer.py#L15).
+
 ### kubernetes Integration
 
 How to get cluster name?
