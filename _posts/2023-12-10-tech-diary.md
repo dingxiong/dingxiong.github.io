@@ -140,7 +140,7 @@ TIL: parquet-tools
 
 I finally set up my tech blog https://dingxiong.github.io/
 
-##gc 2023-11-24 Fri
+## 2023-11-24 Fri
 
 Tmux on MacOS drove me crazy. It reorders PATH variable. See
 https://superuser.com/a/583502 .
