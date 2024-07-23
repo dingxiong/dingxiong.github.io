@@ -7,6 +7,13 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-07-23 Tue
+
+Today I learned a very interesting skill about Remote Code Execution attach.
+See [link](https://github.com/BobTheShoplifter/CVE-2023-52251-POC). Basically,
+`kafka-ui` has this vulnerability. We can use <https://www.revshells.com/> to
+auto generate the reverse shell code. It is very fantastic.
+
 ## 2024-06-17 Mon
 
 "You have to win the roadmap." -- Lisa Su
