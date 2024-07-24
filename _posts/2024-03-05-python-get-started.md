@@ -166,7 +166,7 @@ gdb supports python API after gdb-7.0, but it must be configured with
 supported or not. See more details of
 [this post](https://sourceware.org/pipermail/gdb/2015-April/045235.html).
 
-Using ubuntu as an example, you only need to `apt-get install gdb pytohn3-dbg`,
+Using ubuntu as an example, you only need to `apt-get install gdb python3-dbg`,
 and then you can attach to a process `gdb python <pid>` to debug a running
 python program. However, for my case, our program runs using python3.8, and the
 system python version is python3.9. so `apt-get install python3-dbg` actually
