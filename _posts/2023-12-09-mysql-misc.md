@@ -66,26 +66,41 @@ This step can be omitted if the OS is MacOS.
 Second, initialize the data directory. Suppose the build folder is
 `/code/mysql-server/build`.
 
-```
+```bash
 cd build
-rm -rf data && mkdir data
+rm -rf data && mkdir data && mkdir log && touch log/mysql.err
+
+# Mysql 8
 bin/mysqld --initialize --user=mysql
+
+# Mysql 9
+./bin/mysqld --initialize --datadir=$HOME/code/mysql-server/build/data --log-error=$HOME/code/mysql-server/build/log/mysql.err
 ```
 
-The above command will print a temp root password in console.Now are ready to
-start server
+For Mysql 8, the above command prints a temp root password in console. For
+Mysql 9, the above command prints a temp root password in the log file. Now we
+are ready to start the server.
 
-```
+```bash
+# Mysql 8
 bin/mysqld --user=mysql
+
+# Mysql 9
+bin/mysqld --user=mysql --datadir=$HOME/code/mysql-server/build/data --log-error=$HOME/code/mysql-server/build/log/mysql.err --socket=$HOME/code/mysql-server/build/mysqld.sock --pid-file=$HOME/code/mysql-server/build/mysqld.pid
 ```
 
 Open another terminal,
 
 ```
-bin/mysql -u root -p
+bin/mysql -u root -p<temp_password>
 ```
 
-Type the temp password and then assign a new root password.
+The above command may fail with error saying socket file `/tmp/socket...`
+cannot be used. This is because the existing mysql in the system already uses
+this file, so we need to use another file. Usually, a quick fix is to pass an
+additional parameter `-h 127.0.0.1` such that we do not use Unix socket.
+
+Then assign a new root password.
 
 ```
 mysql>  ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';
