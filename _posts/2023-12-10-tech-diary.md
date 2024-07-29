@@ -7,6 +7,15 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-07-29 Mon
+
+Python traceback and stacktrace are two different concepts. Traceback is an
+object from the place an exception is thrown to the place it is caught.
+Stacktrace is the call frames from current location to the main function.
+
+`logging` library supports both of them: `exc_info=True` and `stack_info=True`.
+Also `logging.exception(...)` has `exc_info=True` by default.
+
 ## 2024-07-23 Tue
 
 Today I learned a very interesting skill about Remote Code Execution attach.
