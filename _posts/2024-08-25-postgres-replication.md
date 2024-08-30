@@ -218,9 +218,8 @@ postgres=# INSERT INTO demo_table (id) values (6);
 First, we cannot use `psql` to do the work because `psql` does not support
 `START_REPLICATION` protocol.
 
-Let's see what happened internally.
-
-Let's start from the client side first. The main code of `pg_recvlogical` is
+Let's see what happened internally. Let's start from the client side first. The
+main code of `pg_recvlogical` is
 [here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_basebackup/pg_recvlogical.c#L213).
 Basically, it has two steps.
 
@@ -236,6 +235,41 @@ Basically, it has two steps.
    issuing a
    [select](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_basebackup/pg_recvlogical.c#L416)
    to the underlying socket.
+
+On the server side, once it receives the `START_REPLICATION` command from the
+client, it first creates a
+[logical_decoding_ctx](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/walsender.c#L1483),
+and then sends a `CopyBothResponse` message to the client, which is required by
+the
+[protocol](https://www.postgresql.org/docs/16/protocol-replication.html#PROTOCOL-REPLICATION-START-REPLICATION):
+
+> The server can reply with an error, for example if the requested section of
+> WAL has already been recycled. On success, the server responds with a
+> CopyBothResponse message, and then starts to stream WAL to the frontend.
+
+After that, the server enters the `WalSndLoop`, keeps streaming WALs to the
+client, and stops after receiving a `CopyDone` message from the client. When
+there is no new WALs, the server process enters a
+[wait state](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/walsender.c#L2886).
+This wait is implemeted using epoll or kevent depending on the underlying OS,
+and it waits for two types of events: socket event from the client and
+conditional variable events on new WAL. Every time when a new WAL is flushed to
+disk, this conditional variable is woke up. See
+[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/transam/xlog.c#L2499).
+Note, many processes are running at the same time ^\_^.
+
+```
+$ ps -ef | grep -i postgres
+  502 61643 86413   0 12:37PM ??         0:00.53 postgres: background writer
+  502 61644 86413   0 12:37PM ??         0:00.52 postgres: walwriter
+  502 61645 86413   0 12:37PM ??         0:00.77 postgres: autovacuum launcher
+  502 61933 86413   0 12:48PM ??         0:00.56 postgres: walsender xiongding postgres [local] START_REPLICATION
+```
+
+One special note about the start `lsn`. When the start `lsn` provided in the
+`START_REPLICATION` command is older than slot's `confirmed_flush_lsn`, then it
+is reset to `confirmed_flush_lsn`. See
+[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/logical/logical.c#L567).
 
 Also, during the while loop, the client sends
 [Standby Status Update](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_basebackup/pg_recvlogical.c#L144)
@@ -265,9 +299,3 @@ This value is used by postgres to decide the oldest WAL to keep.
 
 OK. so far we understand how client and server keep track of streaming
 checkpoints.
-
-> Instructs server to start streaming WAL for logical replication, starting at
-> either WAL location XXX/XXX or the slot's confirmed_flush_lsn (see Section
-> 54.19), whichever is greater.
-
-A question about Debezium's two locations?
