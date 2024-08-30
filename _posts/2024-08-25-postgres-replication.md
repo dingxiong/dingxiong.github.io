@@ -270,6 +270,29 @@ One special note about the start `lsn`. When the start `lsn` provided in the
 `START_REPLICATION` command is older than slot's `confirmed_flush_lsn`, then it
 is reset to `confirmed_flush_lsn`. See
 [code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/logical/logical.c#L567).
+Also, when creating a new replication slot by
+`pg_create_logical_replication_slot`, it will set the `confirmed_flush_lsn` to
+`pg_current_wal_insert_lsn()`. See
+[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/slotfuncs.c#L150).
+So basically, a new slot always starts from the lastest `lsn`. See below
+example.
+
+```
+postgres=# select pg_create_logical_replication_slot('my_slot2', 'pgoutput');
+ pg_create_logical_replication_slot
+------------------------------------
+ (my_slot2,0/190D798)
+
+postgres=# select * from pg_replication_slots;
+ slot_name |  plugin  | slot_type | datoid | database | temporary | active | active_pid | xmin | catalog_xmin | restart_lsn | confirmed_flush_lsn | wal_status | safe_wal_size | two_phase |        inactive_since         | conflicting | invalidation_reason | failover | synced
+-----------+----------+-----------+--------+----------+-----------+--------+------------+------+--------------+-------------+---------------------+------------+---------------+-----------+-------------------------------+-------------+---------------------+----------+--------
+ my_slot2  | pgoutput | logical   |      5 | postgres | f         | f      |            |      |          759 | 0/190D760   | 0/190D798           | reserved   |               | f         | 2024-08-30 08:40:11.831745-07 | f           |                     | f        | f
+
+postgres=# select pg_current_wal_insert_lsn();
+ pg_current_wal_insert_lsn
+---------------------------
+ 0/190D798
+```
 
 Also, during the while loop, the client sends
 [Standby Status Update](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_basebackup/pg_recvlogical.c#L144)
