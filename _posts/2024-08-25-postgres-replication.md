@@ -252,8 +252,8 @@ client, and stops after receiving a `CopyDone` message from the client. When
 there is no new WALs, the server process enters a
 [wait state](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/walsender.c#L2886).
 This wait is implemeted using epoll or kevent depending on the underlying OS,
-and it waits for two types of events: socket event from the client and
-conditional variable events on new WAL. Every time when a new WAL is flushed to
+and it waits for two types of events: socket events from the client and
+conditional variable events of new WAL. Every time when a new WAL is flushed to
 disk, this conditional variable is woke up. See
 [code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/transam/xlog.c#L2499).
 Note, many processes are running at the same time ^\_^.
@@ -267,9 +267,30 @@ $ ps -ef | grep -i postgres
 ```
 
 One special note about the start `lsn`. When the start `lsn` provided in the
-`START_REPLICATION` command is older than slot's `confirmed_flush_lsn`, then it
-is reset to `confirmed_flush_lsn`. See
+`START_REPLICATION` command is older than slot's `confirmed_flush_lsn`, it is
+reset to `confirmed_flush_lsn`. See
 [code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/logical/logical.c#L567).
+When the start `lsn` is newer than slot's `confirmed_flush_lsn`, then WALs
+between `[confirmed_flush_lsn, provided lsn)` are ignored. The subtlety is that
+the walsender process still processes the WALs in range
+`[confirmed_flush_lsn, provided lsn]`, but these records are thrown away in
+streaming. The core code is
+[this function](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/replication/logical/snapbuild.c#L433).
+The corresponding stack path is
+
+```
+PostgresMain
+  -> exec_replication_command
+    -> WalSndLoop
+      -> XLogSendLogical
+        -> ogicalDecodingProcessRecord
+          -> heap_decode
+            -> SnapBuildProcessChange
+              -> ReorderBufferSetBaseSnapshot
+                -> AssertTXNLsnOrder
+                  -> SnapBuildXactNeedsSkip
+```
+
 Also, when creating a new replication slot by
 `pg_create_logical_replication_slot`, it will set the `confirmed_flush_lsn` to
 `pg_current_wal_insert_lsn()`. See
@@ -294,7 +315,7 @@ postgres=# select pg_current_wal_insert_lsn();
  0/190D798
 ```
 
-Also, during the while loop, the client sends
+During the while loop, the client sends
 [Standby Status Update](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/bin/pg_basebackup/pg_recvlogical.c#L144)
 messages to the server to inform the written and flushed `lsn`. On the server
 side, the corresponding `lsn` in-memory fields are
