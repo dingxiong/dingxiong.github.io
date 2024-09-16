@@ -369,66 +369,6 @@ Last, data is copied as binary as described in the above binary protocol. The
 code is
 [here](https://github.com/dimitri/pgloader/blob/2079646c81f565b5e9edba627d14cbf63af2dbdd/src/pg-copy/copy-format.lisp#L15-L16).
 
-## Index
-
-`CREATE INDEX` supports parallel processing starting from
-[version 11.0](https://www.postgresql.org/docs/release/11.0/). This
-[blog](https://www.cybertec-postgresql.com/en/postgresql-parallel-create-index-for-better-performance/)
-shares performance improvement using this new feature. Configurations relevant
-to this feature are `maintenance_work_mem` and
-`max_parallel_maintenance_workers`.
-
-How many processes are created during index creation? The entry point is
-[here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/catalog/index.c#L2941)
-and the call stack is
-
-```
-index_build
-  -> plan_create_index_workers
-    -> compute_parallel_worker
-```
-
-Let's sort out the details. First, if the `parallel_workers` storage option is
-set for the table, then the umber of worker process is just
-`min(table.parallel_workers, max_parallel_maintenance_workers)`. If not, then
-we get the number of pages of this table, and set
-`#worker = log_3(#pages / min_parallel_table_scan_size)`. We can get the number
-of pages from `pg_class.relpages`. Also, `min_parallel_table_scan_size` has
-default value is `8MB`. Note that this parameter is stored as number of
-[block size](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/utils/misc/guc_tables.c#L3511)
-internally, so we can use the table storage size `pg_total_relation_size()` to
-calculate the number of workers. For example, if table storage is less than
-`3*8MB`, then no workers. If table storage is in range `[3*8, 3^2*8]MB`, then
-one worker. It is very simple math. But this is not the end. See
-[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/optimizer/plan/planner.c#L6807).
-
-This is where `maintenance_work_mem` plays a role. The leader process and all
-worker processes share a total `maintenance_work_mem` when scanning table and
-doing tuple sort. The default value `maintenance_work_mem` is 64MB. Suppose we
-have 3 workers, then each process can get 64/4=16MB memory. See
-[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1720)
-and
-[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1827).
-To make sure each process has at least 32MB, we cannot have more than 2
-processes. That is one leader process and one worker process. Personally, I
-think we should set `maintenance_work_mem` to at least 1GB.
-
-One final mark about index_build process. I am curious to know how Postgres
-forks these worker processes and then join them. What I found is this
-[line](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1423).
-Postgres builds some wrapper on top of the fork system call. After creating
-this `ParallelContext`, it calls
-[LaunchParallelWorkers(pcxt)](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1570)
-and
-[WaitForParallelWorkersToAttach(pcxt)](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/nbtree/nbtsort.c#L1600).
-All these makes sense. However, as you can see, it passes the function as a
-string when creating the parallel context. So how does it look up the real
-function by this string? The answer is
-[LookupParallelWorkerFunction](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/transam/parallel.c#L1595).
-If first tries to find the function from a dictionary
-`InternalParallelWorkers`. If not found, then it calls `dlsym` to look up the
-function from some shared library. I am shocked!
-
 ## Locale
 
 Let's talk about locale in general before jumping into locales in Postgres.
