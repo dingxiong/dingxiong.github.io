@@ -2,7 +2,7 @@
 layout: post
 title: Process and thread
 date: 2024-02-18 14:19 -0800
-categories: [os]
+categories: [os, linux]
 tags: [os, linux, process, thread]
 ---
 
