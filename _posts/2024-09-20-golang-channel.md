@@ -10,9 +10,11 @@ Channel is usually used together with goroutines. Let's take an example from
 [k8s source code](https://github.com/kubernetes/kubernetes/blob/1850794626bb995bb754d54be3328c86ee880ba5/vendor/github.com/opencontainers/runc/libcontainer/notify_linux.go#L20).
 This function returns a channel for callers to consume. Inside, it spawns a
 background goroutine to send messages to this channel. Note, this channel is
-created outside this goroutine but closed inside it. Also, errors are all
-handled inside this goroutine. It is golang's philosophy to deal with error
-instead of popping up error.
+created outside this goroutine but closed inside it. I am quite familiar with
+this pattern in Python: generator. Most time, a generator is used as a
+"container" in a for-loop. This is the same for goroutines. Also, note that
+errors are all handled inside this goroutine. It is golang's philosophy to deal
+with error instead of popping up error.
 
 ### Receive Operator
 
