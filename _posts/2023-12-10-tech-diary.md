@@ -7,6 +7,12 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-10-06 Sun
+
+I came across this repo <https://github.com/libusual/libusual> when I dig into
+pgbouncer. This is a super cool tool box. Just a mark here. I will read more
+about it.
+
 ## 2024-07-29 Mon
 
 Python traceback and stacktrace are two different concepts. Traceback is an

@@ -128,3 +128,10 @@ call?
 
 This blocking design has a big impact on the timeout behavior. See the blog
 post about Postgres signals.
+
+## Pgbouncer
+
+```
+./configure --with-openssl=/opt/homebrew/opt/openssl@3
+bear -- make -j7
+```
