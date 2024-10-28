@@ -6,6 +6,164 @@ categories: [database, postgres]
 tags: [postgres]
 ---
 
+## Locks
+
+Postgres has a few levels of
+[lock modes](https://www.postgresql.org/docs/17/explicit-locking.html). The
+code definition is
+[here](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/include/storage/lockdefs.h#L26),
+copied below.
+
+```
+#define AccessShareLock                1  /* SELECT */
+#define RowShareLock                   2  /* SELECT FOR UPDATE/FOR SHARE */
+#define RowExclusiveLock               3  /* INSERT, UPDATE, DELETE */
+#define ShareUpdateExclusiveLock       4  /* VACUUM (non-FULL), ANALYZE, CREATE INDEX CONCURRENTLY */
+#define ShareLock                      5  /* CREATE INDEX (WITHOUT CONCURRENTLY) */
+#define ShareRowExclusiveLock          6  /* like EXCLUSIVE MODE, but allows ROW SHARE */
+#define ExclusiveLock                  7  /* blocks ROW SHARE/SELECT...FOR UPDATE */
+#define AccessExclusiveLock            8  /* ALTER TABLE, DROP TABLE, VACUUM FULL, and unqualified LOCK TABLE */
+```
+
+The most restrictive mode is `AccessExclusiveLock`. It conflicts with almost
+all other modes. Reads or writes get stuck if another transaction holds this
+lock. Unfortunately, lots of DDL operators such as `DROP TABLE`, `ALTER TABLE`
+acquires this lock.
+
+Locks are not automatically acquired at the start of a transaction. Instead,
+locks are acquired on demand as statements within the transaction require them.
+Also, locks are usually released at the end of the transaction (commit or
+rollback). If you read Postgres's source code, you may wonder why I see locks
+obtained explicitly, but I see no code releases this lock. This is because
+locks are released automatically at transaction end. The stack is as follows.
+
+```
+finish_xact_command
+  -> CommitTransactionCommand
+    -> CommitTransactionCommandInternal
+      -> CommitTransaction
+        -> ResourceOwnerRelease
+          -> ResourceOwnerReleaseInternal
+            -> ProcReleaseLocks
+              -> LockReleaseAll
+```
+
+### Lock Acquisition
+
+It is easy to understand that if Txn 1 holds a lock on table A, then any other
+transaction that attempts to acquire a conflicting lock on the same table will
+block. But what about waiting transactions? Suppose Txn 1 is holding a
+AccessShareLock on table A, and Txn 2 tries to acquire a AccessExclusiveLock on
+table A, then we know that Txn 2 is blocked. Now a 3rd transaction Txn 3 comes
+and tries to acquire AccessShareLock on the same table. Txn 3 does not conflict
+with Txn 1. Will it get the lock successfully?
+
+The answer is no. Postgres maintains a lock queue order. When a client acquires
+a lock, it checks whether it conflicts with existing waiting locks and already
+granted locks. See
+[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/storage/lmgr/lock.c#L1014-L1017)
+cited as follows.
+
+```c
+// Check conflict with waiting locks.
+// This check is fast, so perform this test first.
+if (lockMethodTable->conflictTab[lockmode] & lock->waitMask)
+  found_conflict = true;
+else
+  // Check conflict with already granted locks
+  found_conflict = LockCheckConflicts(lockMethodTable, lockmode, lock, proclock);
+```
+
+So not only granted locks but also waiting locks can block lock acquisition.
+
+Moreover, if a conflict is found, the current process calls
+[WaitOnLock](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/storage/lmgr/lock.c#L1046).
+
+```
+WaitOnLock
+  -> ProcSleep
+    -> lock->waitMask |= LOCKBIT_ON(lockmode);
+    -> dclist_insert_before or dclist_push_tail
+
+```
+
+It merges its lock mode into the wait mask, and thus it blocks any new
+transaction acquiring conflicting locks with its own. Meanwhile, it put itself
+before a certain element or the tail of the waiting list.
+
+## Lock Release and Wake Up
+
+<https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/storage/lmgr/README#L387>
+
+To be continued ...
+
+### RowExclusiveLock
+
+INSERT, UPDATE and DELETE acquires `RowExclusiveLock` lock. However, this lock
+is not exclusive among themselves. Two transactions that updates the same row
+can actually hold `RowExclusiveLock` at the same time. `RowExclusiveLock` is
+table-level and not exclusive among transactions performing row modifications.
+
+Then, how does one update block another update? The answer is transaction
+`ShareLock` and tuple `ExclusiveLock`. Suppose we update the same row in three
+transactions.
+
+- Txn 1 (pid: 61385): started transaction, already performed the update
+  operation, but haven't committed yet.
+- Txn 2 (pid: 61360): started transaction but get stuck at the update
+  operation.
+- Txn 2 (pid: 61356): started transaction but get stuck at the update
+  operation.
+
+```
+postgres=# select *, relation::regclass from pg_locks order by pid;
+   locktype    | relation |  tuple | virtualxid | transactionid |  virtualtransaction |  pid  |       mode       | granted | fastpath |           waitstart           |    relation
+---------------+----------+--------+------------+---------------+---------------------+-------+------------------+---------+----------+-------------------------------+----------------
+ relation      |    24613 |        |            |               |  0/6                | 61356 | RowExclusiveLock | t       | t        |                               | employees
+ virtualxid    |          |        | 0/6        |               |  0/6                | 61356 | ExclusiveLock    | t       | t        |                               |
+ relation      |    24617 |        |            |               |  0/6                | 61356 | RowExclusiveLock | t       | t        |                               | employees_pkey
+ tuple         |    24613 |     38 |            |               |  0/6                | 61356 | ExclusiveLock    | f       | f        | 2024-10-27 17:34:20.941188-07 | employees
+ transactionid |          |        |            |           933 |  0/6                | 61356 | ExclusiveLock    | t       | f        |                               |
+
+ transactionid |          |        |            |           930 |  1/4                | 61358 | ExclusiveLock    | t       | f        |                               |
+ relation      |    24613 |        |            |               |  1/4                | 61358 | RowExclusiveLock | t       | f        |                               | employees
+ relation      |    24617 |        |            |               |  1/4                | 61358 | RowExclusiveLock | t       | t        |                               | employees_pkey
+ virtualxid    |          |        | 1/4        |               |  1/4                | 61358 | ExclusiveLock    | t       | t        |                               |
+
+ tuple         |    24613 |     38 |            |               |  2/4                | 61360 | ExclusiveLock    | t       | f        |                               | employees
+ relation      |    24617 |        |            |               |  2/4                | 61360 | RowExclusiveLock | t       | t        |                               | employees_pkey
+ virtualxid    |          |        | 2/4        |               |  2/4                | 61360 | ExclusiveLock    | t       | t        |                               |
+ relation      |    24613 |        |            |               |  2/4                | 61360 | RowExclusiveLock | t       | f        |                               | employees
+ transactionid |          |        |            |           931 |  2/4                | 61360 | ExclusiveLock    | t       | f        |                               |
+ transactionid |          |        |            |           930 |  2/4                | 61360 | ShareLock        | f       | f        | 2024-10-27 17:15:15.08647-07  |
+ virtualxid    |          |        | 3/11       |               |  3/11               | 61902 | ExclusiveLock    | t       | t        |                               |
+ relation      |    12073 |        |            |               |  3/11               | 61902 | AccessShareLock  | t       | t        |                               | pg_locks
+```
+
+Table above shows the lock details. All three transactions are holding the
+`RowExclusiveLock` on the table.  
+Txn 2 is blocked by a `ShareLock` on transaction id 930, i.e., Txn 1, which
+means that Txn2 can only proceed after Txn 1 commits. Meanwhile, Txn 2 holds a
+`ExclusiveLock` on a tuple. Tnx 3 is waiting for Tnx 2 to release the tuple
+lock. Therefore, though Txn 2 and 3 both get stuck at the update statement, but
+the reason is different.
+
+## CREATE/DROP TABLE
+
+TBD
+
+## ALTER TABLE ... ADD/DROP COLUMN
+
+- The ACCESS EXCLUSIVE lock is held only briefly for the metadata change when
+  adding a nullable column without a default value.
+- If you add a column with a NOT NULL constraint and a default value, the lock
+  duration may increase as PostgreSQL will apply the default value to existing
+  rows, which can be more time-consuming.
+
+## ALTER TABLE ... RENAME COLUMN
+
+TBD
+
 ## Index
 
 ### Processes and Memory
@@ -116,40 +274,40 @@ I extract some important logic below.
 lockmode = concurrent ? ShareUpdateExclusiveLock : ShareLock;
 rel = table_open(tableId, lockmode);
 ...
-	if (skip_build || concurrent || partitioned)
-		flags |= INDEX_CREATE_SKIP_BUILD;
+  if (skip_build || concurrent || partitioned)
+    flags |= INDEX_CREATE_SKIP_BUILD;
 ...
 
-	indexRelationId =
-		index_create(rel, indexRelationName, indexRelationId, parentIndexId,
-					 parentConstraintId,
-					 stmt->oldNumber, indexInfo, indexColNames,
-					 accessMethodId, tablespaceId,
-					 collationIds, opclassIds, opclassOptions,
-					 coloptions, NULL, reloptions,
-					 flags, constr_flags,
-					 allowSystemTableMods, !check_rights,
-					 &createdConstraintId);
+  indexRelationId =
+    index_create(rel, indexRelationName, indexRelationId, parentIndexId,
+           parentConstraintId,
+           stmt->oldNumber, indexInfo, indexColNames,
+           accessMethodId, tablespaceId,
+           collationIds, opclassIds, opclassOptions,
+           coloptions, NULL, reloptions,
+           flags, constr_flags,
+           allowSystemTableMods, !check_rights,
+           &createdConstraintId);
 ...
 
-	if (!concurrent)
-	{
-		/* Close the heap and we're done, in the non-concurrent case */
-		table_close(rel, NoLock);
+  if (!concurrent)
+  {
+    /* Close the heap and we're done, in the non-concurrent case */
+    table_close(rel, NoLock);
 
     ...
-		return address;
-	}
+    return address;
+  }
 
-	/* save lockrelid and locktag for below, then close rel */
-	heaprelid = rel->rd_lockInfo.lockRelId;
-	SET_LOCKTAG_RELATION(heaplocktag, heaprelid.dbId, heaprelid.relId);
-	table_close(rel, NoLock);
+  /* save lockrelid and locktag for below, then close rel */
+  heaprelid = rel->rd_lockInfo.lockRelId;
+  SET_LOCKTAG_RELATION(heaplocktag, heaprelid.dbId, heaprelid.relId);
+  table_close(rel, NoLock);
 
 ...
 
-	PopActiveSnapshot();
-	CommitTransactionCommand();
+  PopActiveSnapshot();
+  CommitTransactionCommand();
 ```
 
 This stage does a lot of validation and preprocessing. The whole phase is
@@ -217,19 +375,19 @@ The code block for this part is
 It is not that long.
 
 ```
-	StartTransactionCommand();
+  StartTransactionCommand();
 ...
 
-	WaitForLockers(heaplocktag, ShareLock, true);
+  WaitForLockers(heaplocktag, ShareLock, true);
 ...
 
-	PushActiveSnapshot(GetTransactionSnapshot());
+  PushActiveSnapshot(GetTransactionSnapshot());
 
-	index_concurrently_build(tableId, indexRelationId);
+  index_concurrently_build(tableId, indexRelationId);
 
-	PopActiveSnapshot();
+  PopActiveSnapshot();
 
-	CommitTransactionCommand();
+  CommitTransactionCommand();
 ```
 
 Phase 2 is also wrapped inside a single transaction. It first waits for a
@@ -285,27 +443,27 @@ The code block for this part is
 It is not that long either.
 
 ```
-	StartTransactionCommand();
+  StartTransactionCommand();
 
   pgstat_progress_update_param(PROGRESS_CREATEIDX_PHASE,
                               PROGRESS_CREATEIDX_PHASE_WAIT_2);
 
   WaitForLockers(heaplocktag, ShareLock, true);
 
-	snapshot = RegisterSnapshot(GetTransactionSnapshot());
-	PushActiveSnapshot(snapshot);
+  snapshot = RegisterSnapshot(GetTransactionSnapshot());
+  PushActiveSnapshot(snapshot);
 
-	/*
-	 * Scan the index and the heap, insert any missing index entries.
-	 */
-	validate_index(tableId, indexRelationId, snapshot);
+  /*
+   * Scan the index and the heap, insert any missing index entries.
+   */
+  validate_index(tableId, indexRelationId, snapshot);
 
-	limitXmin = snapshot->xmin;
+  limitXmin = snapshot->xmin;
 
-	PopActiveSnapshot();
-	UnregisterSnapshot(snapshot);
+  PopActiveSnapshot();
+  UnregisterSnapshot(snapshot);
 
-	CommitTransactionCommand();
+  CommitTransactionCommand();
 ```
 
 This is the second `WaitForLockers`. It waits a `ShareLock` again. As the
@@ -346,28 +504,28 @@ The code block for this part is
 [this code range](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/commands/indexcmds.c#L1760-L1799)
 
 ```
-	StartTransactionCommand();
+  StartTransactionCommand();
 
-	/*
-	 * The index is now valid in the sense that it contains all currently
-	 * interesting tuples.  But since it might not contain tuples deleted just
-	 * before the reference snap was taken, we have to wait out any
-	 * transactions that might have older snapshots.
-	 */
-	pgstat_progress_update_param(PROGRESS_CREATEIDX_PHASE,
-								 PROGRESS_CREATEIDX_PHASE_WAIT_3);
-	WaitForOlderSnapshots(limitXmin, true);
+  /*
+   * The index is now valid in the sense that it contains all currently
+   * interesting tuples.  But since it might not contain tuples deleted just
+   * before the reference snap was taken, we have to wait out any
+   * transactions that might have older snapshots.
+   */
+  pgstat_progress_update_param(PROGRESS_CREATEIDX_PHASE,
+                 PROGRESS_CREATEIDX_PHASE_WAIT_3);
+  WaitForOlderSnapshots(limitXmin, true);
 
-	/*
-	 * Index can now be marked valid -- update its pg_index entry
-	 */
-	index_set_state_flags(indexRelationId, INDEX_CREATE_SET_VALID);
+  /*
+   * Index can now be marked valid -- update its pg_index entry
+   */
+  index_set_state_flags(indexRelationId, INDEX_CREATE_SET_VALID);
 
-	CacheInvalidateRelcacheByRelid(heaprelid.relId);
+  CacheInvalidateRelcacheByRelid(heaprelid.relId);
 
-	UnlockRelationIdForSession(&heaprelid, ShareUpdateExclusiveLock);
+  UnlockRelationIdForSession(&heaprelid, ShareUpdateExclusiveLock);
 
-	pgstat_progress_end_command();
+  pgstat_progress_end_command();
 
 ```
 
@@ -450,5 +608,5 @@ only wait for locks.
 
 Wait. I need to be strict. It indeed acquires a `ShareUpdateExclusiveLock` at
 phase 1. But according to
-<https://www.postgresql.org/docs/7.2/locking-tables.html>,
+<https://www.postgresql.org/docs/17/explicit-locking.html>,
 SELECT/INSERT/UPDATE/DELETE does not conflict with this lock.
