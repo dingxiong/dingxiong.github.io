@@ -13,8 +13,8 @@ Spinnaker different components port number table:
 I was very confused by the expression evaluation syntax used in UI in the
 beginning. Later on, I realized that it is just
 [SpEL (Spring Expression Language)](https://docs.spring.io/spring-framework/reference/core/expressions/evaluation.html).
-So a expression `${ a == 'xxx'}` refers to a condition that test whether the
-content of variable `a` is a string `xxx`.
+So an expression `${ a == 'xxx'}` stands for a condition that tests whether the
+content of variable `a` equals the string `xxx`.
 
 ## Cloud driver
 
