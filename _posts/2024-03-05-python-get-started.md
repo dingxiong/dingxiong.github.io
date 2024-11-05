@@ -214,7 +214,7 @@ class_def:
 class_def_raw:
     | 'class' NAME ['(' [arguments] ')' ] ':' block
 
-rguments:
+arguments:
     | args [','] &')'
 
 args:

@@ -6,6 +6,28 @@ categories: [database, postgres]
 tags: [postgres]
 ---
 
+Many tools
+
+[pg_ha_migrations](https://github.com/braintree/pg_ha_migrations/tree/master)
+for Ruby on Rails. The core part is this
+[function](https://github.com/braintree/pg_ha_migrations/blob/073789b04443e00a88ecfc5e279d6be6df5dace3/lib/pg_ha_migrations/safe_statements.rb#L531).
+It acquires the lock beforehand. Basically, it first waits until no conflicting
+transaction exits. Then, it acquires the lock explicitly and if fails, wait
+some time and repeat. The crucial prerequisite is to set `lock_timeout = 5s`,
+so it won't block the query queue for too long.
+
+verify this
+<https://gocardless.com/blog/zero-downtime-postgres-migrations-the-hard-parts/>
+
+> At the time, partly as an artefact of using Rails migrations which don't
+> include a method to do it, we didn't realise that Postgres had support for
+> renaming constraints with ALTER TABLE. Using this avoids the AccessExclusive
+> lock on the table being referenced, but still takes one on the referencing
+> table. Either way, we want to be able to add new foreign keys, not just
+> rename the ones we have.
+
+[squawk](https://github.com/sbdchd/squawk) is a linter for pg migrations.
+
 ## Locks
 
 Postgres has a few levels of
