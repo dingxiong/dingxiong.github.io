@@ -137,6 +137,34 @@ Here is a
 [diagram](https://github.com/DataDog/datadog-agent/blob/083a2213e83d8e845feceaae17f50b6753a95f98/pkg/clusteragent/clusterchecks/README.md#L30)
 illustrates the relationship.
 
+### Instrument An integration
+
+There are many ways to instrument an integrations depending on the environment.
+Let's focus on k8s. The official
+[doc](https://docs.datadoghq.com/containers/kubernetes/integrations) says that
+an integration can be instrumented as pod annotations, ConfigMap, helm chart
+config, etc.
+
+See
+[Basic Agent Autodiscovery](https://docs.datadoghq.com/getting_started/containers/autodiscovery/?tab=adannotationsv2agent736#enable-autodiscovery)
+to learn how to instrument an integration using pod annotation. Basically, we
+need to provide an annotation `ad.datadoghq.com/<CONTAINER_NAME>.checks` with
+below format
+
+```
+ad.datadoghq.com/<CONTAINER_NAME>.checks: |
+  {
+    "<INTEGRATION_NAME>": {
+      "init_config": <INIT_CONFIG>,
+      "instances": [<INSTANCES_CONFIG>]
+    }
+  }
+```
+
+See
+[code](https://github.com/DataDog/datadog-agent/blob/36d88b91f2786cb821e43ff7eac7c60ed1799213/pkg/autodiscovery/listeners/kubelet.go#L233)
+of how datadog extract the annotations out.
+
 ### Postgres Integration
 
 Datadog Postgres integration has the ability to run explanation on sample

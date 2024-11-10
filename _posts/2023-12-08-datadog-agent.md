@@ -107,3 +107,8 @@ So it is a simple regex match. This also means that you cannot nest template
 variables like `!!env_{!!env_{..}!!}!!`. Why I mention this? Because Java
 programmers are so fascinated with nested template variables. Pick some Spring
 code, you will find a lot. Good for them.
+
+Update: in the newer version of datadgo-agent, this logic is rewritten. See
+[code](https://github.com/DataDog/datadog-agent/blob/ba442fd8f16e63677d2bd04fa21d0d6300c59584/pkg/autodiscovery/configresolver/configresolver.go#L402).
+Every template can optionally contains a underscore. The two parts are parsed
+as `VarName` and `VarKey`.

@@ -200,3 +200,7 @@ may be defined in the imported module. The
 clearly says the first step in the macro expansion loop is resolving imports.
 
 Second question is what happens exactly after the use statement is executed.
+
+### Rib
+
+https://github.com/rust-lang/rust/blob/d68c32779627fcd72a928c9e89f65094dbcf7482/compiler/rustc_resolve/src/late.rs#L4481
