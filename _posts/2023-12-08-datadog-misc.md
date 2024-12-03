@@ -162,7 +162,7 @@ ad.datadoghq.com/<CONTAINER_NAME>.checks: |
 ```
 
 See
-[code](https://github.com/DataDog/datadog-agent/blob/36d88b91f2786cb821e43ff7eac7c60ed1799213/pkg/autodiscovery/listeners/kubelet.go#L233)
+[code](https://github.com/DataDog/datadog-agent/blob/ba442fd8f16e63677d2bd04fa21d0d6300c59584/pkg/autodiscovery/common/utils/pod_annotations.go#L22)
 of how datadog extract the annotations out.
 
 ### Postgres Integration
