@@ -12,19 +12,14 @@ The purpose of vacuum:
 2. Update planner statistics
 3. Prevent transaction id wraparound failure
 
-   - how to find the max and min XID in postgres
-   - how is vacuum affected by XID?
    - how dd dashboard show low row count after failover
-   - how does it set FrozenTransactionId
    - how MVCC prevents vacuum, and only subset of tables or all tables?
 
 How does vacuum compare XID? See
 [code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/transam/transam.c#L280)
 Wrapp around happens
 
-## Autovacuum
-
-### When will autovacuum run?
+## When will autovacuum run?
 
 Autovacuum is controlled by two parameters
 
@@ -96,6 +91,35 @@ VACUUM
 ```
 
 You see that it skips 1 page due to buffer pins.
+
+## Freezing
+
+[MVCC in PostgreSQL — 8. Freezing](https://postgrespro.com/blog/pgsql/5967948)
+from postgrespro is the best article talking about freezing I can find online.
+It creates a live experiment that I can follow. The important parameters that
+control the freezing are below:
+
+- vacuum_freeze_min_age: the minimum age of the xmin transaction for which a
+  tuple can be frozen
+- vacuum_freeze_table_age: the age of the transaction for which vacuuming
+  ignores the visibility map and looks through all the table pages in order to
+  do freezing
+- autovacuum_freeze_max_age: forced autovacuuming is launched if
+  pg_class.relfrozenxid is older than this.
+
+Note, during freezing process, only tuples with committed and aborted xmin are
+validate candidates. See
+[code](https://github.com/postgres/postgres/blob/e4c8865196f6ad6bb3473bcad1d2ad51147e4513/src/include/access/heapam.h#L136).
+
+How to get the current and oldest transaction id of a table then?
+
+```
+admincoin=> SELECT relname, age(relfrozenxid) as xmin_age, relfrozenxid as xmin, txid_current() cur_xid from pg_class where relname = 'object';
+ relname | xmin_age  |   xmin    |  cur_xid
+---------+-----------+-----------+-----------
+ object  | 134866017 | 378302674 | 513168691
+(1 row)
+```
 
 ### Logs
 

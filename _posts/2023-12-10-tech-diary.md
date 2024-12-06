@@ -7,6 +7,12 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2024-12-05 Thu
+
+I always came cross real models. For example today
+<https://2023.splashcon.org/details/iwaco-2023-papers/5/Borrow-checking-Hylo>.
+Stay focused and consistently!
+
 ## 2024-10-06 Sun
 
 I came across this repo <https://github.com/libusual/libusual> when I dig into
