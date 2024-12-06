@@ -13,11 +13,6 @@ The purpose of vacuum:
 3. Prevent transaction id wraparound failure
 
    - how dd dashboard show low row count after failover
-   - how MVCC prevents vacuum, and only subset of tables or all tables?
-
-How does vacuum compare XID? See
-[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/transam/transam.c#L280)
-Wrapp around happens
 
 ## When will autovacuum run?
 
@@ -107,9 +102,21 @@ control the freezing are below:
 - autovacuum_freeze_max_age: forced autovacuuming is launched if
   pg_class.relfrozenxid is older than this.
 
+As said in the article, xid is compareable circularly.
+[code](https://github.com/postgres/postgres/blob/a3e6c6f929912f928fa405909d17bcbf0c1b03ee/src/backend/access/transam/transam.c#L280).
+Freezing prevents transaction id wraparound failure.
+
 Note, during freezing process, only tuples with committed and aborted xmin are
 validate candidates. See
 [code](https://github.com/postgres/postgres/blob/e4c8865196f6ad6bb3473bcad1d2ad51147e4513/src/include/access/heapam.h#L136).
+
+Another note is about the relation between MVCC and vacuum. Long-running
+transactions can block vacuum process from freezing old tuples. For a tuple to
+be frozen, PostgreSQL must ensure it's not visible to ANY open transaction. See
+[code](https://github.com/postgres/postgres/blob/e4c8865196f6ad6bb3473bcad1d2ad51147e4513/src/backend/access/heap/heapam.c#L6930).
+Here is how `cutoffs->OldestXmin` calcuated:
+[code](https://github.com/postgres/postgres/blob/e4c8865196f6ad6bb3473bcad1d2ad51147e4513/src/backend/commands/vacuum.c#L1120).
+Basically, it itearates over all active connections and find the oldest xid.
 
 How to get the current and oldest transaction id of a table then?
 
