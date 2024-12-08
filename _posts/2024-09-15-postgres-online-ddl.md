@@ -176,7 +176,7 @@ the reason is different.
 
 TBD
 
-### Alter Table ... Add/Drop Column
+### Alter table ... add/drop column
 
 - The ACCESS EXCLUSIVE lock is held only briefly for the metadata change when
   adding a nullable column without a default value.
@@ -184,11 +184,11 @@ TBD
   duration may increase as PostgreSQL will apply the default value to existing
   rows, which can be more time-consuming.
 
-### Alter Table ... Rename Column
+### Alter table ... rename column
 
 TBD
 
-### Alter Table "table_name" Alter Column "column_name" Type "data_type"
+### Alter table "table_name" alter column "column_name" type "data_type"
 
 First, no surprise. It takes
 [AccessExclusiveLock](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L4543).
@@ -241,6 +241,43 @@ admincoin=# select c.* from pg_cast c
 
 `castfunc = 0` means no cast needed. `castmethod = b` means that the types are
 binary-coercible.
+
+That seems to be the end of the story until I realized
+[this line](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L5871).
+Table rewrite has its own trigger! Following
+[this example](https://www.postgresql.org/docs/current/event-trigger-table-rewrite-example.html),
+we can quickly write a simple one.
+
+```sql
+CREATE OR REPLACE FUNCTION log_rewrite()
+ RETURNS event_trigger
+ LANGUAGE plpgsql AS
+$$
+BEGIN
+  RAISE NOTICE 'Table rewrite event detected for table %', pg_event_trigger_table_rewrite_oid()::regclass;
+END;
+$$;
+
+CREATE EVENT TRIGGER log_rewrite_table ON table_rewrite EXECUTE FUNCTION log_rewrite();
+```
+
+Not fancy, just log it. Let's test it.
+
+```
+CREATE TABLE my_table (
+    id SERIAL PRIMARY KEY,
+    num INTEGER
+);
+
+ALTER TABLE my_table ALTER COLUMN num TYPE TEXT;
+NOTICE:  Table rewrite event detected for table my_table
+```
+
+Now we have a systematic way to test it locally whenever we are not sure
+whether a rewrite will be triggered.
+
+PS. Remember to drop the test event trigger
+`drop event trigger log_rewrite_table`.
 
 ## Index
 
