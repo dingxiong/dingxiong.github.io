@@ -279,6 +279,32 @@ whether a rewrite will be triggered.
 PS. Remember to drop the test event trigger
 `drop event trigger log_rewrite_table`.
 
+### Alter table "table_name" alter column "column_name" set/drop non null
+
+Making a column nullable or non nullable needs `AccessExclusiveLock`. Changing
+a column to nullable is simple. But changing a column to non nullable needs a
+column scan. If one tuple is null at this column, then the change fails with a
+message
+[column xxx of relation xxx contains null values](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L6326).
+The call stack is
+
+```
+ATController
+  -> ATRewriteTables
+    -> ATRewriteTable
+
+        while (table_scan_getnextslot(scan, ForwardScanDirection, oldslot)) {
+          ...
+          if (slot_attisnull(insertslot, attn + 1))
+        }
+```
+
+Note, the function is named `ATRewriteTable`, but it actually can either be
+rewriting the table or scanning the table. Also, this table scan does not
+trigger `table_rewrite` event as the code path is
+[here](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L5931).
+It is not the branch and triggers the `table_rewrite` event.
+
 ## Index
 
 ### Processes and Memory
