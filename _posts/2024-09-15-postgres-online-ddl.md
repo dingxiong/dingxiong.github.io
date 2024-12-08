@@ -170,11 +170,13 @@ means that Txn2 can only proceed after Txn 1 commits. Meanwhile, Txn 2 holds a
 lock. Therefore, though Txn 2 and 3 both get stuck at the update statement, but
 the reason is different.
 
-## CREATE/DROP TABLE
+## Table Commands
+
+### CREATE/DROP TABLE
 
 TBD
 
-## ALTER TABLE ... ADD/DROP COLUMN
+### Alter Table ... Add/Drop Column
 
 - The ACCESS EXCLUSIVE lock is held only briefly for the metadata change when
   adding a nullable column without a default value.
@@ -182,9 +184,63 @@ TBD
   duration may increase as PostgreSQL will apply the default value to existing
   rows, which can be more time-consuming.
 
-## ALTER TABLE ... RENAME COLUMN
+### Alter Table ... Rename Column
 
 TBD
+
+### Alter Table "table_name" Alter Column "column_name" Type "data_type"
+
+First, no surprise. It takes
+[AccessExclusiveLock](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L4543).
+The main question is how long it holds this lock. And this question depends on
+whether the operation needs to rewrite the table or not. Rewriting a large
+table takes a long time. This means the table is down for a long time. We need
+to avoid it.
+
+So what kind of column type change does not require table rewrite? You can get
+the answer from this
+[function](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L13492).
+This function is super long, and I am quickly lost in various coercion child
+functions. However, the comment says only three types of conversions do not
+require rewrite.
+
+- the old type is binary coercible to the new type
+- the new type is an unconstrained domain over the old type
+- {NEW,OLD} or {OLD,NEW} is {timestamptz,timestamp} and the timezone is UTC
+
+The third one is clear.
+
+The second one needs more explanations. A domain is a type derived from another
+type, possibly with additional constraints (e.g., a CHECK constraint). If the
+new type is an unconstrained domain over the old type, it means the domain adds
+no constraints, and the underlying storage remains the same. For example, below
+TEXT and my_text are effectively the same at the binary level.
+
+```
+CREATE DOMAIN my_text AS TEXT;
+```
+
+The first one is vague. I know that `varchar` and `text` types are binary
+coercible just from envision. I do not have code link or proof for it. So how
+can we systematically determine if two types are binary coercible? If you
+follow
+[this line](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L13308),
+you will trace down to a catalog table `pg_cast`. This table stores data type
+conversion paths. Using 'varchar -> text' as an example.
+
+```
+admincoin=# select c.* from pg_cast c
+  inner join pg_type s on c.castsource = s.oid
+  inner join pg_type t on c.casttarget = t.oid
+  where s.typname = 'varchar' and t.typname = 'text' ;
+
+  oid  | castsource | casttarget | castfunc | castcontext | castmethod
+-------+------------+------------+----------+-------------+------------
+ 10129 |       1043 |         25 |        0 | i           | b
+```
+
+`castfunc = 0` means no cast needed. `castmethod = b` means that the types are
+binary-coercible.
 
 ## Index
 
