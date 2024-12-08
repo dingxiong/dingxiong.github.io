@@ -72,7 +72,7 @@ cd build_dir
 # reference symbols in the default installation folder.
 ../configure --without-icu --prefix $HOME/code/postgres/build_dir/install_dir
 # or for debug build
-../configure --without-icu --enable-cassert --enable-debug CFLAGS="-ggdb -Og -g3 -fno-omit-frame-pointer" -prefix $HOME/code/postgres/build_dir/install_dir
+../configure --without-icu --enable-cassert --enable-debug CFLAGS="-ggdb -Og -O0 -g3 -fno-omit-frame-pointer" -prefix $HOME/code/postgres/build_dir/install_dir
 
 # make
 bear -- make -j6
