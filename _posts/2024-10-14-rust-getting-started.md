@@ -12,7 +12,8 @@ tags: [rust]
 2. Install `rust-analyzer`: `rustup component add rust-analyzer` and config
    nvim lspconfig and treesitter.
 3. Read <https://doc.rust-lang.org/stable/book/>
-4. Also checkout <https://rustc-dev-guide.rust-lang.org/getting-started.html>
+4. Checkout <https://rustc-dev-guide.rust-lang.org/getting-started.html>.
+5. Checkout <https://doc.rust-lang.org/nomicon/intro.html>.
 
 ## Build from source
 
