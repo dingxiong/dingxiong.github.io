@@ -126,6 +126,16 @@ Breakpoint 1: where = mysqld`JOIN::estimate_rowcount() + 44 at sql_optimizer.cc:
 Process 4071 launched: '/Users/xiongding/code/mysql-server/build/bin/mysqld' (arm64)
 ```
 
+I haven't make it work under debugger because some signal handler issue. Life
+is short. Do not want to spend time making it work. Instead, there is a simple
+trick to inspect internal states. It has a pretty print function that can print
+out any node.
+
+```
+#include "nodes/print.h"
+pprint(transform);
+```
+
 ### Configurations
 
 The main configuration file is `postgresql.conf`. I thought Postgres reads it
