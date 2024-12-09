@@ -200,9 +200,7 @@ to avoid it.
 So what kind of column type change does not require table rewrite? You can get
 the answer from this
 [function](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L13492).
-This function is super long, and I am quickly lost in various coercion child
-functions. However, the comment says only three types of conversions do not
-require rewrite.
+The comment says only three types of conversions do not require rewrite.
 
 - the old type is binary coercible to the new type
 - the new type is an unconstrained domain over the old type
@@ -222,27 +220,7 @@ CREATE DOMAIN my_text AS TEXT;
 
 The first one is vague. I know that `varchar` and `text` types are binary
 coercible just from envision. I do not have code link or proof for it. So how
-can we systematically determine if two types are binary coercible? If you
-follow
-[this line](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L13308),
-you will trace down to a catalog table `pg_cast`. This table stores data type
-conversion paths. Using 'varchar -> text' as an example.
-
-```
-admincoin=# select c.* from pg_cast c
-  inner join pg_type s on c.castsource = s.oid
-  inner join pg_type t on c.casttarget = t.oid
-  where s.typname = 'varchar' and t.typname = 'text' ;
-
-  oid  | castsource | casttarget | castfunc | castcontext | castmethod
--------+------------+------------+----------+-------------+------------
- 10129 |       1043 |         25 |        0 | i           | b
-```
-
-`castfunc = 0` means no cast needed. `castmethod = b` means that the types are
-binary-coercible.
-
-That seems to be the end of the story until I realized
+can we systematically determine if two types are binary coercible? See
 [this line](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L5871).
 Table rewrite has its own trigger! Following
 [this example](https://www.postgresql.org/docs/current/event-trigger-table-rewrite-example.html),
@@ -274,10 +252,297 @@ NOTICE:  Table rewrite event detected for table my_table
 ```
 
 Now we have a systematic way to test it locally whenever we are not sure
-whether a rewrite will be triggered.
+whether a rewrite will be triggered. Please remember to drop the test event
+trigger `drop event trigger log_rewrite_table`.
 
-PS. Remember to drop the test event trigger
-`drop event trigger log_rewrite_table`.
+That is not the end of the story. I still want to know the internals. How does
+Postgres determine whether a column type change requires table rewrite or not.
+The crucial logic is the call to function
+[coerce_to_target_type](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L13308).
+Let me past the function definition below.
+
+```c
+Node *
+coerce_to_target_type(ParseState *pstate, Node *expr, Oid exprtype,
+					  Oid targettype, int32 targettypmod,
+					  CoercionContext ccontext,
+					  CoercionForm cformat,
+					  int location)
+{
+  ...
+	result = coerce_type(pstate, expr, exprtype,
+                      targettype, targettypmod,
+                      ccontext, cformat, location);
+
+	/*
+	 * If the target is a fixed-length type, it may need a length coercion as
+	 * well as a type coercion.  If we find ourselves adding both, force the
+	 * inner coercion node to implicit display form.
+	 */
+	result = coerce_type_typmod(result,
+                  targettype, targettypmod,
+                  ccontext, cformat, location,
+                  (result != expr && !IsA(result, Const)));
+  ...
+}
+```
+
+It calls two other functions `coerce_type` and `coerce_type_typmod`. Here
+`typmod` stands for `type modifier`. For instance, a `VARCHAR(50)` column has a
+type modifier specifying the maximum length of 50 characters:
+`typmod = 50 + 4 = 54`. Here 4 is added internally to account for PostgreSQL's
+type modifier encoding. You can look up a column's `typmod` from the
+`atttypmod` column of the `pg_attribute` table.
+
+Both `coerce_type` and `coerce_type_typmod` functions boil down to queries to
+the catalog table `pg_cast`. This table stores the cast function between data
+types. Using 'varchar -> text' as an example.
+
+```
+=# select c.* from pg_cast c
+  inner join pg_type s on c.castsource = s.oid
+  inner join pg_type t on c.casttarget = t.oid
+  where s.typname = 'varchar' and t.typname = 'text' ;
+
+  oid  | castsource | casttarget | castfunc | castcontext | castmethod
+-------+------------+------------+----------+-------------+------------
+ 10129 |       1043 |         25 |        0 | i           | b
+```
+
+`castfunc = 0` means no cast needed. `castmethod = b` means that the types are
+binary-coercible.
+
+`coerce_type` gets the cast function from the source type to the target type.
+But this is not enough for types with modifier. `coerce_type_typmod` retrieves
+the cast function from the target type to itself. Why we need this step? See
+the comment
+[here](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/parser/parse_coerce.c#L3262).
+
+> If the target type possesses a pg_cast function from itself to itself, it
+> must need length coercion.
+
+Below is the cast function between `varchar` and itself.
+
+```
+=# select c.* from pg_cast c
+  inner join pg_type s on c.castsource = s.oid
+  inner join pg_type t on c.casttarget = t.oid
+  where s.typname = 'varchar' and t.typname = 'varchar' ;
+
+  oid  | castsource | casttarget | castfunc | castcontext | castmethod
+-------+------------+------------+----------+-------------+------------
+ 10205 |       1043 |       1043 |      669 | i           | f
+
+```
+
+After coercing, the next step is planning. Even you get a non-null cast
+function, the planning result may be trivial. The code is
+[here](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L13341).
+Let's take a look at two cases.
+
+#### Case 1: `varchar(50)` -> `varchar(100)`
+
+`transform` before planning:
+
+```
+ transform
+   {FUNCEXPR
+   :funcid 669
+   :funcresulttype 1043
+   :funcretset false
+   :funcvariadic false
+   :funcformat 2
+   :funccollid 0
+   :inputcollid 0
+   :args (
+      {VAR
+      :varno 1
+      :varattno 2
+      :vartype 1043
+      :vartypmod 54
+      :varcollid 100
+      :varnullingrels (b)
+      :varlevelsup 0
+      :varnosyn 1
+      :varattnosyn 2
+      :location -1
+      }
+      {CONST
+      :consttype 23
+      :consttypmod -1
+      :constcollid 0
+      :constlen 4
+      :constbyval true
+      :constisnull false
+      :location -1
+      :constvalue 4 [ 104 0 0 0 0 0 0 0 ]
+      }
+      {CONST
+      :consttype 16
+      :consttypmod -1
+      :constcollid 0
+      :constlen 1
+      :constbyval true
+      :constisnull false
+      :location -1
+      :constvalue 1 [ 0 0 0 0 0 0 0 0 ]
+      }
+   )
+   :location -1
+   }
+```
+
+`transform` after planning:
+
+```
+   {RELABELTYPE
+   :arg
+      {VAR
+      :varno 1
+      :varattno 2
+      :vartype 1043
+      :vartypmod 54
+      :varcollid 100
+      :varnullingrels (b)
+      :varlevelsup 0
+      :varnosyn 1
+      :varattnosyn 2
+      :location -1
+      }
+   :resulttype 1043
+   :resulttypmod 104
+   :resultcollid 100
+   :relabelformat 1
+   :location -1
+   }
+```
+
+The final `transform` is simplified. From reading the code that follows, this
+case does not require table rewrite.
+
+#### Case 2: `text` -> `varchar(100)`
+
+`transform` before planning:
+
+```
+   {FUNCEXPR
+   :funcid 669
+   :funcresulttype 1043
+   :funcretset false
+   :funcvariadic false
+   :funcformat 2
+   :funccollid 0
+   :inputcollid 0
+   :args (
+      {RELABELTYPE
+      :arg
+         {VAR
+         :varno 1
+         :varattno 2
+         :vartype 25
+         :vartypmod -1
+         :varcollid 100
+         :varnullingrels (b)
+         :varlevelsup 0
+         :varnosyn 1
+         :varattnosyn 2
+         :location -1
+         }
+      :resulttype 1043
+      :resulttypmod -1
+      :resultcollid 0
+      :relabelformat 2
+      :location -1
+      }
+      {CONST
+      :consttype 23
+      :consttypmod -1
+      :constcollid 0
+      :constlen 4
+      :constbyval true
+      :constisnull false
+      :location -1
+      :constvalue 4 [ 104 0 0 0 0 0 0 0 ]
+      }
+      {CONST
+      :consttype 16
+      :consttypmod -1
+      :constcollid 0
+      :constlen 1
+      :constbyval true
+      :constisnull false
+      :location -1
+      :constvalue 1 [ 0 0 0 0 0 0 0 0 ]
+      }
+   )
+   :location -1
+   }
+```
+
+`transform` after planning:
+
+```
+   {FUNCEXPR
+   :funcid 669
+   :funcresulttype 1043
+   :funcretset false
+   :funcvariadic false
+   :funcformat 2
+   :funccollid 100
+   :inputcollid 100
+   :args (
+      {RELABELTYPE
+      :arg
+         {VAR
+         :varno 1
+         :varattno 2
+         :vartype 25
+         :vartypmod -1
+         :varcollid 100
+         :varnullingrels (b)
+         :varlevelsup 0
+         :varnosyn 1
+         :varattnosyn 2
+         :location -1
+         }
+      :resulttype 1043
+      :resulttypmod -1
+      :resultcollid 100
+      :relabelformat 2
+      :location -1
+      }
+      {CONST
+      :consttype 23
+      :consttypmod -1
+      :constcollid 0
+      :constlen 4
+      :constbyval true
+      :constisnull false
+      :location -1
+      :constvalue 4 [ 104 0 0 0 0 0 0 0 ]
+      }
+      {CONST
+      :consttype 16
+      :consttypmod -1
+      :constcollid 0
+      :constlen 1
+      :constbyval true
+      :constisnull false
+      :location -1
+      :constvalue 1 [ 0 0 0 0 0 0 0 0 ]
+      }
+   )
+   :location -1
+   }
+```
+
+It is not simplified. So a table rewrite is required.
+
+#### To Sum Up
+
+- Increasing the column length does not require table rewrite.
+- Decreasing the column length does require table rewrite.
+- If you are not sure, use the `table_rewrite` event trigger to test it!
 
 ### Alter table "table_name" alter column "column_name" set/drop non null
 
@@ -304,6 +569,9 @@ rewriting the table or scanning the table. Also, this table scan does not
 trigger `table_rewrite` event as the code path is
 [here](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/commands/tablecmds.c#L5931).
 It is not the branch and triggers the `table_rewrite` event.
+
+To sum up, changing a colum from nullable to non-null needs table scan and can
+fail. We should avoid it.
 
 ## Index
 
