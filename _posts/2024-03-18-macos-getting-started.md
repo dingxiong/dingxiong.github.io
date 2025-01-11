@@ -98,3 +98,131 @@ lrwxr-xr-x  1 root  wheel    67B Jan  2 12:29 /Library/Developer/CommandLineTool
 So basically, the real python installed in my laptop is at
 `/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3`.
 You can check that this file is also a universal binary.
+
+## SDK Feature
+
+Recently, I observed one linking issue inside MacOS.
+
+```
+$ ld -o out out.o -lSystem -syslibroot `xcrun -sdk macosx --show-sdk-path` -e _start -arch arm64
+
+$ otool -L out
+out:
+        /usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+
+$ ll /usr/lib/libSystem.B.dylib
+ls: /usr/lib/libSystem.B.dylib: No such file or directory
+```
+
+I built a binary and it was linked successfully, but when I inspect the shared
+library used by this binary, I could not find it! Where is `libSystem.B.dylib`?
+The answer is in this [post](https://developer.apple.com/forums/thread/655588).
+Apple DTS engineer provided an excellent answer to why MacOS has different
+versions of SDKs, the disk size problem it creates, and how Apple uses stub
+files, namely, .tbd (text based description) files to solve this problem. In
+consequence, starting from macOS Big Sur 11.0.1, copies of dynamic libraries
+are no longer present on the file system. Code that attempts to check for
+dynamic library presence by looking for a file at a path or enumerating a
+directory will fail.
+
+Let's examine one .tbd file.
+
+```
+$ cat /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/libSystem.tbd
+
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ x86_64-macos, x86_64-maccatalyst, arm64-macos, arm64-maccatalyst,
+                   arm64e-macos, arm64e-maccatalyst ]
+install-name:    '/usr/lib/libSystem.B.dylib'
+current-version: 1351
+reexported-libraries:
+  - targets:         [ x86_64-macos, x86_64-maccatalyst, arm64-macos, arm64-maccatalyst,
+                       arm64e-macos, arm64e-maccatalyst ]
+    libraries:       [ '/usr/lib/system/libcache.dylib', '/usr/lib/system/libcommonCrypto.dylib',
+                       '/usr/lib/system/libcompiler_rt.dylib', '/usr/lib/system/libcopyfile.dylib',
+                       '/usr/lib/system/libcorecrypto.dylib', '/usr/lib/system/libdispatch.dylib',
+                       '/usr/lib/system/libdyld.dylib', '/usr/lib/system/libkeymgr.dylib',
+                       '/usr/lib/system/libmacho.dylib', '/usr/lib/system/libquarantine.dylib',
+                       '/usr/lib/system/libremovefile.dylib', '/usr/lib/system/libsystem_asl.dylib',
+                       '/usr/lib/system/libsystem_blocks.dylib', '/usr/lib/system/libsystem_c.dylib',
+                       '/usr/lib/system/libsystem_collections.dylib', '/usr/lib/system/libsystem_configuration.dylib',
+                       '/usr/lib/system/libsystem_containermanager.dylib', '/usr/lib/system/libsystem_coreservices.dylib',
+                       '/usr/lib/system/libsystem_darwin.dylib', '/usr/lib/system/libsystem_darwindirectory.dylib',
+                       '/usr/lib/system/libsystem_dnssd.dylib', '/usr/lib/system/libsystem_eligibility.dylib',
+                       '/usr/lib/system/libsystem_featureflags.dylib', '/usr/lib/system/libsystem_info.dylib',
+                       '/usr/lib/system/libsystem_kernel.dylib', '/usr/lib/system/libsystem_m.dylib',
+                       '/usr/lib/system/libsystem_malloc.dylib', '/usr/lib/system/libsystem_networkextension.dylib',
+                       '/usr/lib/system/libsystem_notify.dylib', '/usr/lib/system/libsystem_platform.dylib',
+                       '/usr/lib/system/libsystem_pthread.dylib', '/usr/lib/system/libsystem_sandbox.dylib',
+                       '/usr/lib/system/libsystem_sanitizers.dylib', '/usr/lib/system/libsystem_secinit.dylib',
+                       '/usr/lib/system/libsystem_symptoms.dylib', '/usr/lib/system/libsystem_trace.dylib',
+                       '/usr/lib/system/libunwind.dylib', '/usr/lib/system/libxpc.dylib' ]
+exports:
+  - targets:         [ x86_64-macos, x86_64-maccatalyst ]
+    symbols:         [ 'R8289209$_close', 'R8289209$_fork', 'R8289209$_fsync', 'R8289209$_getattrlist',
+                       'R8289209$_getrlimit', 'R8289209$_getxattr', 'R8289209$_open',
+                       'R8289209$_pthread_attr_destroy', 'R8289209$_pthread_attr_init',
+                       'R8289209$_pthread_attr_setdetachstate', 'R8289209$_pthread_create',
+                       'R8289209$_pthread_mutex_lock', 'R8289209$_pthread_mutex_unlock',
+                       'R8289209$_pthread_self', 'R8289209$_ptrace', 'R8289209$_read',
+                       'R8289209$_setattrlist', 'R8289209$_setrlimit', 'R8289209$_sigaction',
+                       'R8289209$_stat', 'R8289209$_sysctl', 'R8289209$_time', 'R8289209$_unlink',
+                       'R8289209$_write' ]
+  - targets:         [ x86_64-macos, x86_64-maccatalyst, arm64-macos, arm64-maccatalyst,
+                       arm64e-macos, arm64e-maccatalyst ]
+    symbols:         [ ___crashreporter_info__, _libSystem_init_after_boot_tasks_4launchd,
+                       _mach_init_routine ]
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ x86_64-macos, x86_64-maccatalyst, arm64-macos, arm64-maccatalyst,
+                   arm64e-macos, arm64e-maccatalyst ]
+install-name:    '/usr/lib/system/libcache.dylib'
+current-version: 95
+parent-umbrella:
+  - targets:         [ x86_64-macos, x86_64-maccatalyst, arm64-macos, arm64-maccatalyst,
+                       arm64e-macos, arm64e-maccatalyst ]
+    umbrella:        System
+exports:
+  - targets:         [ x86_64-macos, x86_64-maccatalyst, arm64-macos, arm64-maccatalyst,
+                       arm64e-macos, arm64e-maccatalyst ]
+    symbols:         [ _cache_create, _cache_destroy, _cache_get, _cache_get_and_retain,
+                       _cache_get_cost_hint, _cache_get_count_hint, _cache_get_info,
+                       _cache_get_info_for_key, _cache_get_info_for_keys, _cache_get_minimum_values_hint,
+                       _cache_get_name, _cache_hash_byte_string, _cache_invoke, _cache_key_hash_cb_cstring,
+                       _cache_key_hash_cb_integer, _cache_key_is_equal_cb_cstring,
+                       _cache_key_is_equal_cb_integer, _cache_print, _cache_print_stats,
+                       _cache_release, _cache_release_cb_free, _cache_release_value,
+                       _cache_remove, _cache_remove_all, _cache_remove_with_block,
+                       _cache_retain, _cache_set_and_retain, _cache_set_cost_hint,
+                       _cache_set_count_hint, _cache_set_minimum_values_hint, _cache_set_name,
+                       _cache_simulate_memory_warning_event, _cache_value_make_nonpurgeable_cb,
+                       _cache_value_make_purgeable_cb ]
+...
+```
+
+So it is a meta data file. It stores the platform information, the libraries
+exported and their installation location, and also the exported symbols.
+
+Another observation is that all exported symbols have a underscore prefix. For
+example, if we need to call `printf` in the assembly, we should write
+
+```
+; arm64 architecture
+.extern _printf
+bl _printf
+```
+
+Why? The leading underscore on MacOS is part of the
+[Mach-O standard](https://math-atlas.sourceforge.net/devel/assembly/MachORuntime.pdf).
+Quoted below:
+
+> A symbol is a generic representation of the location of a function, data
+> variable, or constant in an executable file. References to functions and data
+> in a program are references to symbols. To refer to a symbol when using the
+> dynamic linking routines, you usually pass the name of the symbol, although
+> some functions also accept a number representing the ordering of the symbol
+> in the executable file. The name of a symbol representing a function that
+> conforms to standard C calling conventions is the name of the function with
+> an underscore prefix. Thus, the name of the symbol representing the function
+> main would be \_main.
