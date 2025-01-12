@@ -29,6 +29,12 @@ to get start locally.
 Parameter `--debug-server-jvm` above turns on remote debugging, so you can
 debug it using jdb.
 
+## Helm chart
+
+The Elasticsearch helm chat has a configuration `replicas` which means the
+number of nodes, not the `index.number_of_replicas`. The number of replicas of
+each shard is by default one unless changed.
+
 ## Node discovery
 
 Zen discovery
