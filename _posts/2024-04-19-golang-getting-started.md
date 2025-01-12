@@ -27,6 +27,24 @@ Also, remember to clear cache `go clean --cache` after rebuilding go, or use
 - `golangci-lint` is the most used linter for Golang.
 - [deadcode detector](https://go.dev/blog/deadcode)
 
+## Debug
+
+`go mod edit -replace` is the way to go to use a customized branch or commit of
+a dependence.
+
+### delve
+
+`dlv attach pid` is a useful command to see the internals of a running process.
+Under the hood, delve calls Unix system call `ptrace`. Inside Alpine
+
+```
+apk add --update --no-cache go
+go install github.com/go-delve/delve/cmd/dlv@latest
+export PATH=$PATH:/root/go/bin
+```
+
+Not sure why using alpine, delve cannot find the debug symbols.
+
 ## Global variables
 
 As a newbie to Golang, I am quite impressed by the flexibility of global
