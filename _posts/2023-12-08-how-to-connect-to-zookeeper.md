@@ -2,7 +2,7 @@
 layout: post
 title: How to connect to zookeeper?
 date: 2023-12-08 00:13 -0800
-categories: [zookeeper, misc]
+categories: [zookeeper]
 tags: [zookeeper, kafka, TLS]
 ---
 
