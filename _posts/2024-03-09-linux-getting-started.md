@@ -186,3 +186,12 @@ Debugging Information Entry DIE: tag & attributes
 Line number table
 
 CFI: call frame information The CFI describes how to unwind the stack.
+
+## System Calls
+
+### brk and sbrk
+
+`brk` stands for `break`. The program break is the first location after bss
+section. So it represents the end of data section of a process's memory space.
+You can check out
+[mm_strcut](https://github.com/torvalds/linux/blob/58390c8ce1bddb6c623f62e7ed36383e7fa5c02f/include/linux/mm_types.h#L700).
