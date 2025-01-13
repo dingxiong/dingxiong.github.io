@@ -9,7 +9,8 @@ tags: [compiler, parser]
 
 Parsing expressions are the most fun part of a parser. Checkout
 [wiki](https://en.wikipedia.org/wiki/Operator-precedence_parser). Expression
-produce value but statement does not.
+produces value but statement does not. A good reference is from the author of
+[Rust-analyze](https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html).
 
 TODO:
 
