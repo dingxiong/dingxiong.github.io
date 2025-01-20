@@ -170,6 +170,17 @@ Scoped session is the default session object created by Flask-sqlalchemy. The
 scope here refers to request context. Each request gets a new session. See
 [code](https://github.com/pallets-eco/flask-sqlalchemy/blob/da0e0df80cc368d95dc5a118ce857cead172aded/flask_sqlalchemy/__init__.py#L886-L900).
 
+### Identity Map
+
+Primary key is required for identity map to work. See
+[official documents](https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key).
+
+### How is transaction managed?
+
+Session starts a transaction when
+[\_connection_for_bind](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/orm/session.py#L770)
+is called.
+
 ## HowTos
 
 ### How to get the underlying sqlite connection in sqlalchemy
