@@ -113,6 +113,13 @@ special treatment.
   discarding `:`, we need to parse another expression and it is required.
 - Assignment `=` is also an infix operator.
 
-TODO:
+One problem with Pratt parser that almost no blog posts have mentioned is that
+The example implementation parses as much of a valid expression as it can until
+it hit an invalid token. So for input `a-b)*c`, the output is `a-b`. It cannot
+recognize the unbalanced parenthesis. The fix is simple but in another place.
+This issues can be easily fixed at the tokenization stage. We can use a stack
+to report unbalanced delimiters. See
+[issue-9](https://github.com/matklad/minipratt/issues/9).
 
-1. write a Pratt parser.
+I wrote a Pratt parser in Python. See
+[code](https://github.com/dingxiong/codebox/tree/main/pratt-parser).
