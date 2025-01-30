@@ -6,8 +6,7 @@ categories: [programming-language, python]
 tags: [python, sqlalchemy]
 ---
 
-Start learning sqlalchemy from
-[here](https://docs.sqlalchemy.org/en/14/tutorial/index.html)
+Sqlalchemy is huge. It has over 600k lines of code.
 
 - concept:
   - engine
@@ -122,6 +121,17 @@ And this action can do a lot of magic things such as add this `obj` to the
 `session.identity_map._modified` set, which should not run at the same time
 with `session.flush`.
 
+Also, the `__get__` method is customized. When it is called on the table class,
+it returns itself. When it is called on the table instance, namely, a table
+row, it returns the attribute of the row.
+
+Attributes or columns are often used to express where clauses such as
+`Table.col_a == 5`. What happens underneath? `Table.col_a` is a
+`InstrumentedAttribute`, and the expression's result is a `BinaryExpression`.
+Operator `==` or `__eq__` is customized. The hierarchy chain is long and
+insane. It sets down to
+[this list of operators](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/sql/default_comparator.py#L307).
+
 ## How `create_engine` works
 
 Engine is just a bridge that connects a `pool` and `dialect`. The
@@ -180,6 +190,62 @@ Primary key is required for identity map to work. See
 Session starts a transaction when
 [\_connection_for_bind](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/orm/session.py#L770)
 is called.
+
+### session.execute
+
+The usually way to invoke a sql statement is through
+`session.execute(stmt, params)`. Parameter `stmt` encapsulate the parametrized
+sql statement. `params` contains the binded parameters. Meanwhile some
+statements such as `Insert` can bind the parameters directly into the
+statement, which is fine because eventually both styles insert the data to
+database. However, there is a huge pitfall here. It is the boolean attribute
+`for_executemany`. See the documentation
+[here](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/sql/compiler.py#L741)
+and how this attributed is calculated
+[here](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/engine/base.py#L1554).
+Basically, in order to render the `returning` clause in a insert statement, we
+must use the style that has `for_executemany=True.` Also, the documentation of
+the second style already warns us that it is different from `executemany`. See
+[code](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/sql/dml.py#L704)
+and quote below
+
+> It is essential to note that passing multiple values is NOT the same as using
+> traditional executemany() form. The above syntax is a special syntax not
+> typically used. To emit an INSERT statement against multiple rows, the normal
+> method is to pass a multiple values list to the
+> :meth:`_engine.Connection.execute` method, which is supported by all database
+> backends and is generally more efficient for a very large number of
+> parameters.
+
+Another pitfall about `session.execute` is auto flush. For below pseudocode
+
+```python
+with session:
+  a = session.query(TableA.where(...))
+  a.field = new_value
+  b_insert = insert(TableB).values(...)
+  session.execute(b_insert)
+  session.commit()
+```
+
+We know that after `session.commit()`. Record of `a` will have an updated
+`field = new_value` in the database. But when does it happen? It definitely
+does not happen at line `a.field = new_value`. Otherwise, Sqlalchemy is stupid.
+It cannot consolidate updates to the same record. For a long time, I thought It
+happens at `session.commit()`. But it turns out it happens at
+`session.execute(b_query)`. The actual call chain is
+
+```
+session.execute
+  -> compile_state_cls.orm_pre_session_exec
+    -> session._autoflush()
+```
+
+Function `session.execute` has a step called
+[orm_pre_session_exec](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/orm/session.py#L1665),
+which triggers
+[session.\_autoflush](https://github.com/sqlalchemy/sqlalchemy/blob/768507602e4564108799c0c6bfd3d7ceb734784b/lib/sqlalchemy/orm/persistence.py#L1829).
+To be honest, I am tired of all these shit details.
 
 ## HowTos
 
