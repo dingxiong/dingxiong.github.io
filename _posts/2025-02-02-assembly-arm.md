@@ -10,9 +10,9 @@ Aarch64 is just arm64. The instruction set used in aarch64 is called A64.
 
 ## Procedure Calls
 
-The standard says that the first parameters should be loaded to X0-X7. If more
-than 8 arguments, then the rest should be be put to stack. The return values is
-stored in X0.
+The standard says that the first few parameters should be loaded to X0-X7. If
+more than 8 arguments, then the rest should be be put to stack. The return
+values is stored in X0.
 
 There is a noticeable difference for variadic functions in MacOS. The
 [MacOS ARM64 ABI](https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Update-code-that-passes-arguments-to-variadic-functions)
@@ -24,48 +24,123 @@ be 8-byte stack aligned. For example, for a call
 
 ## Prologue and Epilogue
 
-(TODO: below part is wrong. Fix it.)
-
-We usually see two different flavors of prologue and epilogue on internet
+I tried to ask chatgpt/claude/deepseek about ARM64 prologue and epilogue, but
+all of them generated wrong results. Then I wrote a small C program.
 
 ```
-sub sp, sp, #16          // Allocate 16 bytes for frame record
-stp x29, x30, [sp]      // Save x29 (FP) and x30 (LR) to stack
-mov x29, sp             // Set FP (frame pointer) to current SP
+#include <stdio.h>
 
-ldp x29, x30, [sp]      // x29 = [sp]; x30 = [sp + 8]
-add sp, sp, #16
+long add(long x1, long x2, long x3, long x4, long x5, long x6) {
+  return x1 + x2 + x3 + x4 + x5 + x6;
+}
+
+int main() {
+    long x1 = 1;
+    long x2 = 2;
+    long x3 = 3;
+    long x4 = 4;
+    long x5 = 5;
+    long x6 = 6;
+    printf("%dl\n", add(x1, x2, x3, x4, x5, x6));
+    return 0;
+}
+```
+
+The generated assembly is
+
+```
+...
+_main:                                  ; @main
+        sub     sp, sp, #96
+        stp     x29, x30, [sp, #80]             ; 16-byte Folded Spill
+        add     x29, sp, #80
+        mov     w8, #0                          ; =0x0
+        str     w8, [sp, #20]                   ; 4-byte Folded Spill
+        stur    wzr, [x29, #-4]
+        mov     x8, #1                          ; =0x1
+        stur    x8, [x29, #-16]
+        mov     x8, #2                          ; =0x2
+        stur    x8, [x29, #-24]
+        mov     x8, #3                          ; =0x3
+        stur    x8, [x29, #-32]
+        mov     x8, #4                          ; =0x4
+        str     x8, [sp, #40]
+        mov     x8, #5                          ; =0x5
+        str     x8, [sp, #32]
+        mov     x8, #6                          ; =0x6
+        str     x8, [sp, #24]
+        ldur    x0, [x29, #-16]
+        ldur    x1, [x29, #-24]
+        ldur    x2, [x29, #-32]
+        ldr     x3, [sp, #40]
+        ldr     x4, [sp, #32]
+        ldr     x5, [sp, #24]
+        bl      _add
+        mov     x8, sp
+        str     x0, [x8]
+        adrp    x0, l_.str@PAGE
+        add     x0, x0, l_.str@PAGEOFF
+        bl      _printf
+        ldr     w0, [sp, #20]                   ; 4-byte Folded Reload
+        ldp     x29, x30, [sp, #80]             ; 16-byte Folded Reload
+        add     sp, sp, #96
+        ret
+.section  __TEXT,__cstring,cstring_literals
+      l_.str:                                 ; @.str
+        .asciz  "%dl\n"
+...
+```
+
+First, the output is totally unoptimized and even wasteful. There are only 6
+local variables, so 48 (6\*8) bytes together with 16 bytes for x29 and x30
+should be enough. We do not need 96 bytes. Let's use `sp'` denoting the `sp`
+before `sub sp, sp, #96`. The memory layout is
+
+```
+high memory address
++------------------+  <-- Old SP (before allocation)
+|   Previous Frame |
+|------------------|
+|   Saved x30 (LR) |  <-- sp + 88
+|   Saved x29 (FP) |  <-- sp + 80  = x29
+|   Local Var x1   |  <-- x29 - 4
+|   Local Var x2   |  <-- x29 - 16
+|   Local Var x3   |  <-- x29 - 24
+|   Local Var x4   |  <-- x29 - 32
+|   Local Var x5   |  <-- x29 - 40 = sp + 40
+|   Local Var x6   |  <-- x29 - 48 = sp + 32
+|    ...           |
+|                  |  <-- x29 - 80 = sp
++------------------+
+low memory address
+```
+
+We can generalize the pattern. Suppose we have `N` local variables and each
+takes 8 bytes, then the function prologue is
+
+```
+sub     sp, sp, #(1+N/2)*16         ; grow stack for (1+N/2)*16 bytes. sp must be 16 bytes aligned.
+stp     x29, x30, [sp, #N/2*16]     ; store x29 and x30 at the higher memory address, so local variables grow toward to the top of stack.
+add     x29, sp, #N/2*16            ; set the new frame pointer x29 to point to the location which is just above the first local variable.
+```
+
+and epilogue is
+
+```
+ldp     x29, x30, [sp, #N*8]     ; restore frame pointer and link register.
+add     sp, sp, #(1+N/2)*16         ; resort stack pointer
 ret
 ```
 
-and
+When there is no local variables (N = 0), we can simplify it to
 
 ```
-sub sp, sp, #32         // Allocate 32 bytes for stack frame
-stp x29, x30, [sp, #16] // Save x29 (FP) and x30 (LR) at offset 16
-add x29, sp, #16        // Set FP to sp + 16 (to point to saved x29/x30)
+stp x29, x30, [sp, #-16]!   ; Pre-decrement SP and store FP and LR
+mov x29, sp                 ; Set up frame pointer
 
-ldp x29, x30, [sp, #16]
-add sp, sp, #32
+ldp x29, x30, [sp], #16    // Restore FP and LR, post-increment SP
 ret
 ```
-
-A shorter version
-
-```
-    stp x29, x30, [sp, #-16]!   // Pre-decrement SP and store FP and LR
-    mov x29, sp                  // Set up frame pointer
-
-    ldp x29, x30, [sp], #16    // Restore FP and LR, post-increment SP
-    ret
-```
-
-The former is a basic Stack Frame Setup. The latter is an advanced Frame
-Layout. Why called advanced? Because the stack portion [sp, sp+16] can be used
-for local variables. Why only reserving 16 bytes for local variables? It is a
-balance. For a function using a lot of local variables, 16 bytes are not
-enough. But for functions that do not use local variables, it is a waste of
-stack space. 16 bytes strikes a balance.
 
 See [reference](https://johannst.github.io/notes/arch/arm64.html).
 
