@@ -127,7 +127,7 @@ add     x29, sp, #N/2*16            ; set the new frame pointer x29 to point to 
 and epilogue is
 
 ```
-ldp     x29, x30, [sp, #N*8]     ; restore frame pointer and link register.
+ldp     x29, x30, [sp, #N/2*16]     ; restore frame pointer and link register.
 add     sp, sp, #(1+N/2)*16         ; resort stack pointer
 ret
 ```
