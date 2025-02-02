@@ -8,6 +8,20 @@ tags: [assembly, arm, arm64, aarch64]
 
 Aarch64 is just arm64. The instruction set used in aarch64 is called A64.
 
+## Procedure Calls
+
+The standard says that the first parameters should be loaded to X0-X7. If more
+than 8 arguments, then the rest should be be put to stack. The return values is
+stored in X0.
+
+There is a noticeable difference for variadic functions in MacOS. The
+[MacOS ARM64 ABI](https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Update-code-that-passes-arguments-to-variadic-functions)
+specifies that variadic arguments should be stored on stack as well, and should
+be 8-byte stack aligned. For example, for a call
+`int x, y; printf("msg %d %d\n", x, y);`, `X0` should be the address of "msg
+%d\n". `X1` and `X2` should be `x` and `y`. In addition, stack should also have
+`x` and `y` and each takes 8 bytes.
+
 ## Prologue and Epilogue
 
 (TODO: below part is wrong. Fix it.)
@@ -34,6 +48,16 @@ add x29, sp, #16        // Set FP to sp + 16 (to point to saved x29/x30)
 ldp x29, x30, [sp, #16]
 add sp, sp, #32
 ret
+```
+
+A shorter version
+
+```
+    stp x29, x30, [sp, #-16]!   // Pre-decrement SP and store FP and LR
+    mov x29, sp                  // Set up frame pointer
+
+    ldp x29, x30, [sp], #16    // Restore FP and LR, post-increment SP
+    ret
 ```
 
 The former is a basic Stack Frame Setup. The latter is an advanced Frame
