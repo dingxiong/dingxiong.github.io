@@ -99,6 +99,31 @@ So basically, the real python installed in my laptop is at
 `/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3`.
 You can check that this file is also a universal binary.
 
+## Static and dynamic linkers
+
+In Linux, we call `ld` the linker, and `ld.so` the dynamic loader. Linker
+assembles multiple object files to an application or a shared library. A
+dynamic loader is used for load or run a program at runtime. MacOS has similar
+tools: `ld` and `dyld`. But Apple calls them differently: static linker and
+dynamic linker. Man, this is absolutely wrong. Anyway, we need to understand
+what they really mean. By the way, MacOS has disabled static linking for 3rd
+part applications.
+
+For a long time, `ld` is `ld64`. In Xcode 15 (released in 2023), they
+introduced a new static linker. It is a ground-up rewrite that’s up to 5x
+faster than `ld64`. Since it is not open sourced, I have no idea about what
+went on internally. For compatibility, the older linker is still there but
+renamed to `ld-classic`. You can pass flag `-ld_classic` to `ld` to invoke it.
+See below output for all the linker related tools in my Macbook M1.
+
+```
+$ ll /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/  | grep ld
+-rwxr-xr-x    1 root  wheel   3.7M Dec  6 23:15 ld
+-rwxr-xr-x    1 root  wheel   7.6M Dec  6 23:15 ld-classic
+-rwxr-xr-x    1 root  wheel   576K Dec  6 23:15 dyld_info
+...
+```
+
 ## SDK Feature
 
 Recently, I observed one linking issue inside MacOS.
