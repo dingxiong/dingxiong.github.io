@@ -132,6 +132,20 @@ add     sp, sp, #(1+N/2)*16         ; resort stack pointer
 ret
 ```
 
+There are many offset calculation. I find that we can simply epilogue a little
+bit. `x29` won't change inside this function, and assume we do not change `sp`
+too. A child function call inside the current function maintains invariance of
+`sp`, so this assumption is pretty valid. So `x29 = sp + N/2 * 16` and thus
+
+```
+mov sp, x29             ; x29 = sp + N/2 * 16, so this is equivalent to `add sp, sp, N/2*16`
+ldp x29, x30, [sp]        ; equivalent to `ldp x29, x30, [old_sp, #N/2*16]`;
+add sp, sp, #16         ; totally restore sp.
+ret
+```
+
+TODO: need to verify this actually works.
+
 When there is no local variables (N = 0), we can simplify it to
 
 ```
@@ -143,6 +157,14 @@ ret
 ```
 
 See [reference](https://johannst.github.io/notes/arch/arm64.html).
+
+## MOV and LDR
+
+In arm64, `mov` and `ldr` serve different purposes. `mov` copies data between
+registers, or to load an immediate value directly into a register. `ldr` loads
+data from memory into a register. This is dramatically different from x86_64,
+where `mov` is used for all all kinds of data copy. `mov` in x86_64 is like the
+combination of `mov` and `ldr` in arm64 and is more than that.
 
 ## Load data by label
 
