@@ -24,6 +24,44 @@ How to ssh to a node:
 ssh -i infra.pem ec2-user@ip-172-31-64-166.us-east-2.compute.internal
 ```
 
+## IMDS
+
+IMDS (Instance Metadata Service) is a service that provides metadata and user
+data to EC2 instances, such as instance type, instance id, image id, IAM role,
+etc. This information is mainly used for secured authentication. Applications
+running on EC2 instances must sign their requests with AWS credentials. One way
+is to provide the credentials in the form of AWS access keys/secrets. But to be
+safe, you need to rotate them periodically. Both the security and infra team
+hate this manual work! The other approach is authenticating through IAM roles.
+This is more popular. In EKS, this means you run the application using a
+service account which is attached with an IAM role. What happens underneath is
+
+- Application sends a request
+  `http://169.254.169.254/latest/meta-data/iam/security-credentials/` to get
+  the associated IAM role.
+- Then it sends another request
+  `http://169.254.169.254/latest/meta-data/iam/security-credentials/<iam_role_name>/`
+  to get a temporary access credential.
+
+IP `169.254.169.254` is a hard-coded private IP that is injected by AWS to
+every EC2's route table. It is guaranteed to be there! You can see some
+examples in my Kubernetes network blog.
+
+IMDS is also used by some observability tools such as datadog to label
+instance. Checkout out my datadog blogs about how it is used.
+
+IMDS itself has some security loopholes. So this leads to invention of IMDSv2.
+All requests to IMDSv2 should attach a session token, so the first step is to
+obtain a session token by the following call.
+
+```
+curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"
+```
+
+The `ttl` header is required, and the client side is responsible for rotating
+this session token before it expires. Luckily, most aws client libraries has
+already done it for us.
+
 ## EKSCTL
 
 `eksctl` is a command line tool to manage AWS EKS cluster. Its github front
