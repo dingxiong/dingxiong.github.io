@@ -47,7 +47,12 @@ physical and logical replication as L4 and L7 layer in the network stack.
 
 Physical replication does not have too much things to tune. While logical
 replication has more flexibility. `pg_publication` defines the relevant
-configurations for logical replications.
+configurations for logical replications. There are many ways to create a
+publication. See
+[doce](https://www.postgresql.org/docs/current/sql-createpublication.html). For
+example, if I create a publication for a specific schema using the format
+`CREATE PUBLICATION xxx FOR TABLES IN SCHEMA public;`, then what tables are
+really included? You can get the answer from `pg_publication_tables` view.
 
 Replication uses the COPY sub-protocol underneath. See more details of
 server-client protocol
