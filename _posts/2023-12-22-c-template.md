@@ -122,6 +122,33 @@ void foo(T&& a) {
 Implementation of `std::forward` is simple. It is just a
 [static_cast](https://github.com/llvm/llvm-project/blob/abcb66d18e3898ee42d3d313b46e18b97639a3cc/libcxx/include/__utility/forward.h).
 
+## Fold expression
+
+The strict definition of fold expression is given
+[here](https://eel.is/c++draft/expr.prim.fold#def:binary_right_fold). The goal
+of fold expression is to reduce the SFINAE boilerplate of iterating or reducing
+variadic template arguments. See
+[n4191](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4191.html).
+
+A few notes about the syntax/semantics of fold expression:
+
+1. the enclosing parenthesis are required.
+2. The expression must be `cast-expression`. Why having this constraint? I
+   believe it is to avoid complex edge cases.
+
+How LLVM compiles fold expression? First, the parser is
+[here](https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/lib/Parse/ParseExpr.cpp#L3596).
+It generates a struct
+[CXXFoldExpr](https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/include/clang/AST/ExprCXX.h#L4843)
+which contains `LHS`, `RHS` and `Opcode`. Function `ActOnCXXFoldExpr` validates
+that both `LHS` and `RHS` should be cast-expression. Also, either `LHS` or
+`RHS` should contain an unexpanded parameter pack. Note, the parser does not
+expand fold expression. It is expanded to a nested binary expression during AST
+rewrite. See
+[TreeTransform::TransformCXXFoldExpr](https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/lib/Sema/TreeTransform.h#L16188).
+This function is actually called by
+[TransformExpr](https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/lib/Sema/TreeTransform.h#L4317).
+
 ## Tricks
 
 Use `class... Args` to mimic Python `*args` and `**kwargs`. See
