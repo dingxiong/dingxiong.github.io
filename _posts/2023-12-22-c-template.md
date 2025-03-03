@@ -149,6 +149,9 @@ rewrite. See
 This function is actually called by
 [TransformExpr](https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/lib/Sema/TreeTransform.h#L4317).
 
+TODO: explain the difference between pack expansion and fold expression. See
+[code](https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/lib/Parse/ParseExpr.cpp#L3710).
+
 ## Tricks
 
 Use `class... Args` to mimic Python `*args` and `**kwargs`. See
