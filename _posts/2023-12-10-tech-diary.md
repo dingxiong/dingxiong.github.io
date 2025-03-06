@@ -7,6 +7,11 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2025-03-05
+
+Our director shared the website to find financial adviser
+<https://www.flatfeeadvisors.org/>
+
 ## 2024-12-05 Thu
 
 I always came cross real models. For example today
