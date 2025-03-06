@@ -8,6 +8,31 @@ tags: [python]
 
 - PEP 3119
 
+## tp_new vs tp_init
+
+`tp_new` and `tp_init` are both used during object construction. They take the
+same arguments `args` and `kwargs`. See
+[code](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/typeobject.c#L1100).
+So could we use `__new__` instead of `__int__` to pass `args` and `kwargs` for
+initialization?
+
+The answer is no. The two most comment implementation of `tp_new` is `type_new`
+and `object_new`. The former is used to create a new type, and related to
+metaclass. `args` and `kwargs` are used to build the namespace and context of
+this class. See
+[code](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/typeobject.c#L3296).
+`type_new` is not to worry about for most time. On the other hand `object_new`
+is used for all regular class construction. The method explicitly states
+[that](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/typeobject.c#L4519)
+it only takes one argument, so we cannot pass `args` and `kwargs` to it. That
+is why for regular classes, we must use `__init__` to initialize the object.
+
+That is the rule for most cases, but definitely there are exceptions. For
+example, `weakref.ref` class does not inherit `object_new`. Instead, it has its
+own implementation of
+[tp_new](https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Objects/weakrefobject.c#L292).
+For `weakref.ref`, it uses `__new__` to pass in `args` and `kwargs`.
+
 ## How does metaclass work?
 
 Read `Python/bltinmodule.c#builtin___build_class__` You can see that the
