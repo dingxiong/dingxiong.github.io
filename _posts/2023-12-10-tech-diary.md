@@ -7,6 +7,14 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2025-03-09
+
+Today I learned a new nvim plugin called `ltex-ls` which is grammar checker for
+Latex and markdown. It provides a cmd line tool `ltex-cli`. I was very excited.
+Then I tried a little bit and always failed with
+`StringIndexOutOfBoundsException`. Their github issue list contains such
+issues, but they claimed it was fixed. ???
+
 ## 2025-03-05
 
 Our director shared the website to find financial adviser
