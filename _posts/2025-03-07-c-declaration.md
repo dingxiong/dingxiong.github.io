@@ -8,6 +8,9 @@ tags: [cpp]
 
 ## Structured Binding
 
+Structured binding is easy to use but has many pitfalls if you zoom in on the
+details.
+
 Definition
 https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/include/clang/Sema/DeclSpec.h#L1792
 
@@ -16,7 +19,7 @@ https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e
 Parser
 https://github.com/llvm/llvm-project/blob/f5f5286da3a64608b5874d70b32f955267039e1c/clang/lib/Parse/ParseDecl.cpp#L7306
 
-```
+```cpp
 #include <iostream>
 #include <type_traits>
 
@@ -37,7 +40,7 @@ int main() {
 
 cppinsight version:
 
-```
+```cpp
 #include <iostream>
 #include <type_traits>
 
@@ -56,3 +59,7 @@ int main()
   return 0;
 }
 ```
+
+Structured binding Binding variables are not references. They are alias with
+`#define`. See
+[Domján Dániel's slides](https://llvm.org/devmtg/2023-05/slides/TechnicalTalks-May11/02-Domjan-StructuredBindingsCombined.pdf).

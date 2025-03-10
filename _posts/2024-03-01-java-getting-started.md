@@ -1,10 +1,65 @@
 ---
 layout: post
-title: Java random stuff
+title: Java -- Getting Started
 date: 2024-03-01 00:30 -0800
 categories: [programming-language, java]
 tags: [java]
 ---
+
+## Setting up Java in MacOS
+
+MacOS is notorious for the lack of transparency of how everything works. Java
+is no exception. With a brand new MacBook, you have a few pre-installed
+commands: `/usr/bin/java`, `/usr/bin/javac`, `/usr/libexec/java_home` and etc.
+Do not try to figure out the source code of these commands. They are built-in
+scripts written in Objective-C or Swift using Apple's Foundation framework. Its
+source code is not publicly available. You can use `otool -L` to list the
+shared libs used by them. Most likely, you can find
+`/System/Library/PrivateFrameworks` in the output.
+
+The first step is installing a jdk. Let's do it with `brew install openjdk`.
+The output has a caveat section.
+
+```
+==> Caveats
+For the system Java wrappers to find this JDK, symlink it with
+  sudo ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk.jdk
+```
+
+To understand this caveat, we need to understand how MacOS finds the correct
+version of Java. `/usr/bin/java` is a shim command, and from my
+observation/guess, it chooses the java version in two steps:
+
+1. If `JAVA_HOME` is set, then it delegates to `$JAVA_HOME/bin/java`.
+2. If `JAVA_HOME` is absent, then it calls `/usr/libexec/java_home` to find the
+   most appropriate java home.
+
+How does `/usr/libexec/java_home` find the available java homes? Again, from
+the information I collected online and my guess, it searches a few root
+folders: `/Library/Java/JavaVirtualMachines/`,
+`/System/Library/Java/JavaVirtualMachines/` and
+`~/Library/Java/JavaVirtualMachines/`. Every sub folder of them can potentially
+contains a valid java jdk folder. `/usr/libexec/java_home` will look for a file
+called `Contents/Info.plist` which contains meta data about this jdk version.
+Then it sorts them by reverse version and the largest version would be used for
+`JAVA_HOME` if `JAVA_HOME` is not explicitly specified. For example,
+
+```
+/usr/libexec/java_home -V
+Matching Java Virtual Machines (6):
+    23.0.2 (arm64) "Homebrew" - "OpenJDK 23.0.2" /opt/homebrew/Cellar/openjdk/23.0.2/libexec/openjdk.jdk/Contents/Home
+    19 (arm64) "Oracle Corporation" - "OpenJDK 19" /Users/xiongding/Library/Java/JavaVirtualMachines/openjdk-19/Contents/Home
+    18.0.2.1 (arm64) "Eclipse Adoptium" - "OpenJDK 18.0.2.1" /Users/xiongding/Library/Java/JavaVirtualMachines/temurin-18.0.2.1/Contents/Home
+    17.0.4 (arm64) "Amazon.com Inc." - "Amazon Corretto 17" /Users/xiongding/Library/Java/JavaVirtualMachines/corretto-17.0.4.1/Contents/Home
+    15.0.10 (arm64) "Azul Systems, Inc." - "Zulu 15.46.17" /Users/xiongding/Library/Java/JavaVirtualMachines/azul-15.0.10/Contents/Home
+    13.0.14 (arm64) "Azul Systems, Inc." - "Zulu 13.54.17" /Users/xiongding/Library/Java/JavaVirtualMachines/azul-13.0.14/Contents/Home
+/opt/homebrew/Cellar/openjdk/23.0.2/libexec/openjdk.jdk/Contents/Home
+```
+
+It shows I have a few version of jdk installed and `openjdk/23.0.2` will be
+used for `/usr/bin/java` if `JAVA_HOME` is not specified.
+
+## Reading Openjdk
 
 [openjdk](https://github.com/openjdk/jdk) is the starting point. However,
 IntelliJ fails to resolve symbols when open it directly. Actually, openjdk team
