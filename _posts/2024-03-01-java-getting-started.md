@@ -38,11 +38,11 @@ How does `/usr/libexec/java_home` find the available java homes? Again, from
 the information I collected online and my guess, it searches a few root
 folders: `/Library/Java/JavaVirtualMachines/`,
 `/System/Library/Java/JavaVirtualMachines/` and
-`~/Library/Java/JavaVirtualMachines/`. Every sub folder of them can potentially
-contains a valid java jdk folder. `/usr/libexec/java_home` will look for a file
+`~/Library/Java/JavaVirtualMachines/`. Every sub folder of them potentially
+contains a valid java jdk folder. `/usr/libexec/java_home` looks for a file
 called `Contents/Info.plist` which contains meta data about this jdk version.
-Then it sorts them by reverse version and the largest version would be used for
-`JAVA_HOME` if `JAVA_HOME` is not explicitly specified. For example,
+Then it sorts them by version reversely and the highest version would be used
+for `JAVA_HOME` if `JAVA_HOME` is not explicitly specified. For example,
 
 ```
 /usr/libexec/java_home -V
@@ -56,8 +56,38 @@ Matching Java Virtual Machines (6):
 /opt/homebrew/Cellar/openjdk/23.0.2/libexec/openjdk.jdk/Contents/Home
 ```
 
-It shows I have a few version of jdk installed and `openjdk/23.0.2` will be
-used for `/usr/bin/java` if `JAVA_HOME` is not specified.
+It shows I have a few versions of jdk installed and `openjdk/23.0.2` will be
+used for `/usr/bin/java` if `JAVA_HOME` is not specified. See result below.
+
+```
+$ JAVA_HOME='' /usr/bin/java --version
+openjdk 23.0.2 2025-01-21
+OpenJDK Runtime Environment Homebrew (build 23.0.2)
+OpenJDK 64-Bit Server VM Homebrew (build 23.0.2, mixed mode, sharing)
+
+$ JAVA_HOME='/Users/xiongding/Library/Java/JavaVirtualMachines/azul-13.0.14/Contents/Home' /usr/bin/java --version
+openjdk 13.0.14 2023-01-17
+OpenJDK Runtime Environment Zulu13.54+17-CA (build 13.0.14+5-MTS)
+OpenJDK 64-Bit Server VM Zulu13.54+17-CA (build 13.0.14+5-MTS, mixed mode)
+```
+
+Let's come back to the `brew install` message above. `Homebrew` is
+conservative. It installs jdk inside folder `/opt/homebrew/opt`, so it is
+user's responsibility to soft link it to the
+`/Library/Java/JavaVirtualMachines/`. I think most likely we would put it under
+the home library folder not the root system folder.
+
+```
+ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk ~/Library/Java/JavaVirtualMachines/openjdk.jdk
+```
+
+To sum up, Setting up Java in MacOS needs three steps
+
+```
+brew install openjdk
+ln -sfn /opt/homebrew/opt/openjdk/libexec/openjdk.jdk ~/Library/Java/JavaVirtualMachines/openjdk.jdk
+echo 'export JAVA_HOME=/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home/' >> ~/.bashrc
+```
 
 ## Reading Openjdk
 
