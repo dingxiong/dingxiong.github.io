@@ -56,7 +56,7 @@ ssh into a node
 minikube ssh -p minikube-multi-nodes -n minikube-multi-nodes-m02
 ```
 
-then you can run `docker ps` to see what containers are running in this node.
+Then you can run `docker ps` to see what containers are running in this node.
 
 In production env, you can install
 [node-shell](https://github.com/kvaps/kubectl-node-shell) throw `krew`.
@@ -96,7 +96,7 @@ There are roughly two types of auto scaler. One that scales pods. The other
 scales nodes. We are familiar with the latter one
 [later one](https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler).
 
-Pod autoscaler is built in kubernetes. HPA (Horizontal Pod Autoscaler) is
+Pod autoscaler is built in Kubernetes. HPA (Horizontal Pod Autoscaler) is
 mostly frequently used. You can create it by `k autoscale`. The default metrics
 you can depend on are CPU and memory. You can also use custom metrics and
 external metrics. Most popular tools provide custom/external metrics for you to
@@ -118,7 +118,8 @@ sheet.
 
 These posts
 [1](https://vivilearns2code.github.io/k8s/2021/03/11/writing-controllers-for-kubernetes-custom-resources.html)
-,[2](https://vivilearns2code.github.io/k8s/2021/03/12/diving-into-controller-runtime.html)
+,
+[2](https://vivilearns2code.github.io/k8s/2021/03/12/diving-into-controller-runtime.html)
 are a good start to understand k8s controllers. Also, kubebuilder's official
 tutorial is very useful.
 
@@ -126,7 +127,6 @@ tutorial is very useful.
 
 1. Certain fields are immutable, like label selectors in deployments. see
    https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#label-selector-updates
-2.
 
 # Minikube
 
