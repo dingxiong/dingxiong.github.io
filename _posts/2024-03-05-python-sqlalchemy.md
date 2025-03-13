@@ -185,6 +185,18 @@ scope here refers to request context. Each request gets a new session. See
 Primary key is required for identity map to work. See
 [official documents](https://docs.sqlalchemy.org/en/20/faq/ormconfiguration.html#how-do-i-map-a-table-that-has-no-primary-key).
 
+When query result is added to the identity map?
+
+```
+sqlalchemy/engine/result.py(1129)all()
+sqlalchemy/engine/result.py(401)_allrows()
+sqlalchemy/engine/result.py(1813)_fetchall_impl()
+sqlalchemy/orm/loading.py(151)chunks()
+sqlalchemy/orm/loading.py(151)<listcomp>()
+sqlalchemy/orm/loading.py(940)_instance()
+sqlalchemy/orm/identity.py(168)_add_unpresent()
+```
+
 ### How is transaction managed?
 
 Session starts a transaction when
