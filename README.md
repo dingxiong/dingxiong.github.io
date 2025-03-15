@@ -34,7 +34,8 @@ yarn add -D prettier
 yarn add -D lint-staged
 ```
 
-Add a `lint-staged` block and also, add `yarn lint-staged` in `.husky/pre-commit`.
+Add a `lint-staged` block and also, add `yarn lint-staged` in
+`.husky/pre-commit`.
 
 Node, every time, we need do `nvm use` before commit.
 
@@ -56,4 +57,12 @@ Run local server
 
 ```
 bundle exec jekyll serve
+```
+
+# Typo and grammar
+
+Recommend `ltex-cli`. For example
+
+```
+ltex-cli --verbose _posts/2025-03-15-c-modules.md
 ```
