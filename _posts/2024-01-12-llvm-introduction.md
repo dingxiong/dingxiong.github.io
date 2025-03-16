@@ -6,7 +6,7 @@ tags: [compiler, llvm]
 ---
 
 First, Clang is both the frontend of C like language, and it is also a compiler
-driver. As a frontend, Clang has a hand-written recursive decent parser, and it
+driver. As a frontend, Clang has a handwritten recursive decent parser, and it
 is quite complicated. Quote from Walter Bright
 [here](https://www.reddit.com/r/cpp/comments/h0iok/the_hard_part_about_writing_a_c_parser/)
 
@@ -17,8 +17,8 @@ To study clang, I took the same approach as I did when learning Cpython
 internals. I compile clang/llvm in debug mode, and invoke gdb for a sample
 program and walk through stack trace together with the code base.
 
-Another valuable resource is the llvm dev meetings https://llvm.org/devmtg/
-Checkout the recordings in youtube!
+Another valuable resource is the llvm dev meetings <https://llvm.org/devmtg/>.
+Checkout the recordings on youtube!
 
 ## Compile
 
@@ -37,8 +37,25 @@ After build, you will see `compile_commands.json` in the `build` folder. Make a
 soft link to it in the root directory.
 
 ```
-ln -s compile_commands.json  ../
+cd ..
+ln -s build/compile_commands.json  compile_commands.json
 ```
+
+Also, for clangd to work correctly, create a `.clangd` file in the root of the
+project.
+
+```
+cat <<EOF > .clangd
+CompileFlags:
+  Add: [-D_LIBCPP_STD_VER=26, -std=c++20]
+  Remove: [-std=c++17]
+
+EOF
+```
+
+Here, we remove c++17 compilation flag and add c++20 compilation flag because
+the clang version in my macbook supports up to c++17, and cmake configuration
+stage added this flag. On the other hand, clangd has support for c++20.
 
 ## Navigate the code base.
 
@@ -69,7 +86,7 @@ cc1_main -> CompilerInstance::ExecuteAction -> FrontendAction::Execute
 `CodeGenAction.h` defines a lot of types of actions.
 
 After reading some codes, I found this video
-[2019 LLVM Developers’ Meeting: S. Haastregt & A. Stulova “An overview of Clang ”](https://www.youtube.com/watch?v=5kkMpJpIGYU)
+[2019 LLVM Developers’ Meeting: S. Haastregt & A. Stulova “An overview of Clang”](https://www.youtube.com/watch?v=5kkMpJpIGYU)
 Just like reinforcement of what I learned.
 
 ## LLVM options
