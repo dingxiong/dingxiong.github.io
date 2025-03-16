@@ -49,13 +49,30 @@ cat <<EOF > .clangd
 CompileFlags:
   Add: [-D_LIBCPP_STD_VER=26, -std=c++20]
   Remove: [-std=c++17]
-
 EOF
 ```
 
 Here, we remove c++17 compilation flag and add c++20 compilation flag because
 the clang version in my macbook supports up to c++17, and cmake configuration
 stage added this flag. On the other hand, clangd has support for c++20.
+
+Sometimes, we want to learn the details of these std libraries, then we can
+build libcxx following
+<https://releases.llvm.org/16.0.0/projects/libcxx/docs/BuildingLibcxx.html>.
+
+```
+cd llvm-project
+mkdir -p build_cxx
+cmake -G Ninja -S runtimes -B build_cxx -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind"
+ninja -C build_cxx cxx cxxabi unwind
+```
+
+Then we can use this customized libcxx.
+
+```
+clang++ -std=c++20 -stdlib=libc++ -nostdinc++  -I ./build_cxx/include/c++/v1/ \
+  -L ./build_cxx/lib -rpath ./build_cxx/lib ~/tmp/test.cp
+```
 
 ## Navigate the code base.
 
