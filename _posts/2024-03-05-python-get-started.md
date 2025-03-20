@@ -258,6 +258,14 @@ In order to make it work with python virtualenv. You need to add below configs.
 The `venvPath` config above can be replaced using command line argument
 `-v /opt/homebrew/Caskroom/miniforge/base/envs`.
 
+All the LSP server endpoints are registered
+[here](https://github.com/microsoft/pyright/blob/443297f9f9c3631e30d241b977ddecc9281fb6be/packages/pyright-internal/src/languageServerBase.ts#L478).
+For example, when you click `shift + k` in neovim. It calls the `onHover`
+endpoint.
+
+Also, follow the official doc
+<https://microsoft.github.io/pyright/#/build-debug> to build pyright.
+
 ## Misc
 
 ### conda, conda-forge and miniforge
