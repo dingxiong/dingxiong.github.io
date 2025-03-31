@@ -54,3 +54,25 @@ for the peer dependency concept. Meanwhile, you can use
 ## SWC: speedy web compiler
 
 written in Rust.
+
+## Node
+
+### nvm
+
+`nvm` is a pure bash implementation of node version management. It installed a
+shell function
+[nvm](https://github.com/nvm-sh/nvm/blob/ffec9fec724da725013d5b50e763908113983fc3/nvm.sh#L3000)
+for you. When you starts the shell, it injects
+`$HOME/.nvm/versions/node/<version>/bin` to the $PATH environment variable, so
+you can happily use node command.
+
+How does it switch node version? When you run `nvm use <version>`. It simply
+regex replaces the version in $PATH. See
+[code](https://github.com/nvm-sh/nvm/blob/ffec9fec724da725013d5b50e763908113983fc3/nvm.sh#L981).
+
+We use `nvm install <version>` to add a new version of node under directory
+`~/.nvm/versions`. By default, only `npm` package is installed. You can verify
+it by `npm ls -g`. By the way, as a newbie to the JS world. I was curious where
+these `npm` global packages are installed. `npm config get prefix` returns the
+`~/.nvm/versions/node/<version>`. I still haven't figured out how `nvm` sets
+this prefix correctly.
