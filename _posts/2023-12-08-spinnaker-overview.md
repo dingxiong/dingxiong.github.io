@@ -1,8 +1,8 @@
 ---
 title: Spinnaker overview
 date: 2023-12-08 10:01 -0800
-categories: [spinnaker]
-tags: [spinnaker]
+categories: [devops]
+tags: [devops, spinnaker]
 ---
 
 Spinnaker different components port number table:

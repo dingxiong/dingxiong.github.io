@@ -1,8 +1,8 @@
 ---
 title: Spinnaker clouddrive
 date: 2023-12-08 10:00 -0800
-categories: [spinnaker]
-tags: [spinnaker]
+categories: [devops]
+tags: [devops, spinnaker]
 ---
 
 ## How to build

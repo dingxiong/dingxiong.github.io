@@ -2,8 +2,8 @@
 layout: post
 title: Spinnaker igor
 date: 2023-12-08 10:00 -0800
-categories: [spinnaker]
-tags: [spinnaker]
+categories: [devops]
+tags: [devop, spinnaker]
 ---
 
 I thought `igor` may stands for "integration ..." in spinnaker. Then I asked

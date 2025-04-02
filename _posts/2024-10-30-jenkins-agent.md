@@ -2,8 +2,8 @@
 layout: post
 title: Jenkins -- Agent
 date: 2024-10-30 18:24 -0700
-categories: [jenkins]
-tags: [jenkins]
+categories: [devops]
+tags: [devops, jenkins]
 ---
 
 Jenkins has a master-agent architecture. Agent, i.e., worker is also called
