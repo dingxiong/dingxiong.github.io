@@ -6,6 +6,17 @@ categories: [devops]
 tags: [devops, terraform]
 ---
 
+## Terraform plugin
+
+Terraform provides a go library `terraform-plugin-framework` to help people
+write 3rd party plugins, and it provides a
+[official tutorial](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework).
+The core part is a set of
+[proto contracts](https://github.com/hashicorp/terraform-plugin-go/blob/ee6e52ba66ed669583b507f13068b818bce39614/tfprotov6/internal/tfplugin6/tfplugin6_grpc.pb.go#L345).
+However, Terraform team makes layers of abstractions on top this proto
+definitions, so it is not obvious the first time you read this code and
+wondering how it is hooked up.
+
 ## cdktf
 
 [Terraform-cdk](https://github.com/hashicorp/terraform-cdk) is really a crappy
