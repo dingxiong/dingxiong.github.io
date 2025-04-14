@@ -13,9 +13,27 @@ write 3rd party plugins, and it provides a
 [official tutorial](https://developer.hashicorp.com/terraform/tutorials/providers-plugin-framework).
 The core part is a set of
 [proto contracts](https://github.com/hashicorp/terraform-plugin-go/blob/ee6e52ba66ed669583b507f13068b818bce39614/tfprotov6/internal/tfplugin6/tfplugin6_grpc.pb.go#L345).
-However, Terraform team makes layers of abstractions on top this proto
-definitions, so it is not obvious the first time you read this code and
-wondering how it is hooked up.
+However, Terraform team makes layers of abstractions on top these proto
+definitions, so it is not obvious the first time you read this code and wonder
+how they are hooked up. For example,
+[tf6server.server](https://github.com/hashicorp/terraform-plugin-go/blob/ee6e52ba66ed669583b507f13068b818bce39614/tfprotov6/tf6server/server.go#L408)
+implements the proto `ProviderServer` interface, but it delegates all implement
+details to its member variable `downstream tfprotov6.ProviderServer`. Note this
+`ProviderServer` interface is not the proto `ProviderServer` interface. In this
+way, it detaches the contract interface from the proto definitions, so
+`terraform-plugin-go` has two layers of abstractions. Users only need to worry
+about `tfprotov6.ProviderServer` but not the original proto definitions.
+
+This is not the end of the story. Let's see what happens on the side of
+`terraform-plugin-framework`.
+[proto6server.server](https://github.com/hashicorp/terraform-plugin-framework/blob/f4f3ad9b7c7c11729980fa658d77c3a69754ffe6/internal/proto6server/serve.go#L14)
+implements `tfprotov6.ProviderServer` interface. However, all implementations
+are delegated to its member variable `FrameworkServer fwserver.Server`. For
+example, you can find the `ReadDataSource` implementation
+[here](https://github.com/hashicorp/terraform-plugin-framework/blob/f4f3ad9b7c7c11729980fa658d77c3a69754ffe6/internal/fwserver/server_readdatasource.go#L38).
+As a user, I only need to implement the `DataSource` interface. Now, you
+understand this whole shit layers of abstractions. They must be Java
+programmers!
 
 ## cdktf
 
