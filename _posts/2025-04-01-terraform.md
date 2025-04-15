@@ -40,6 +40,52 @@ One nit detail. Popular plugins such as `terraform-plugin-aws` uses
 instead of `terraform-plugin-framework`. This sdk library is about to
 deprecated. Newer plugins should build against the plugin framework.
 
+## Terraformer
+
+This is a typical Cobra cmd line application. For AWS, it uses `aws-sdk-go` to
+load the configurations of various resources and dump them into terraform
+configuration files. See
+[RDS example](https://github.com/GoogleCloudPlatform/terraformer/blob/698f2d52547f67015e44932b6568fc42d5484d3a/providers/aws/rds.go#L32).
+
+It also requires you have the corresponding terraform plugin
+[pre-installed](https://github.com/GoogleCloudPlatform/terraformer/blob/698f2d52547f67015e44932b6568fc42d5484d3a/terraformutils/providerwrapper/provider.go#L273).
+This is used during terraform configuration file generation stage. It is not
+used for fetching resource definitions. It first tries to load the plugin in
+the current `.terraform` folder. If not found, then go to the global plugin
+cache folder `$HOME/.terraform.d/plugins`. The annoying thing about terraform
+is that it does not provide a way to download a plugin directly. You must
+create a directory and put a `*.tf` file inside this folder like the one below
+and run `terraform init` to download the plugin indirectly.
+
+```
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
+provider "aws" {
+  region = "us-east-1"
+}
+```
+
+Then run `terraformer` inside this directory.
+
+One additional note about filters: according to the documentation, we can use
+filters to narrow down the resource we want to import. For example,
+
+```
+terraformer import aws -r rds --profile=admin -f Type=sg;Name=vpc_id;Value=VPC_ID
+```
+
+However, I find only a few small subset of resources support it. For example,
+[AWS EC2](https://github.com/GoogleCloudPlatform/terraformer/blob/698f2d52547f67015e44932b6568fc42d5484d3a/providers/aws/ec2.go#L41)
+supports it. On the other hand,
+[AWS RDS](https://github.com/GoogleCloudPlatform/terraformer/blob/698f2d52547f67015e44932b6568fc42d5484d3a/providers/aws/rds.go#L258)
+does not support it.
+
 ## cdktf
 
 [Terraform-cdk](https://github.com/hashicorp/terraform-cdk) is really a crappy
