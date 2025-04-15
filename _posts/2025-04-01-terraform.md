@@ -35,6 +35,11 @@ As a user, I only need to implement the `DataSource` interface. Now, you
 understand this whole shit layers of abstractions. They must be Java
 programmers!
 
+One nit detail. Popular plugins such as `terraform-plugin-aws` uses
+[terraform-plugin-sdk](https://github.com/hashicorp/terraform-plugin-sdk)
+instead of `terraform-plugin-framework`. This sdk library is about to
+deprecated. Newer plugins should build against the plugin framework.
+
 ## cdktf
 
 [Terraform-cdk](https://github.com/hashicorp/terraform-cdk) is really a crappy
