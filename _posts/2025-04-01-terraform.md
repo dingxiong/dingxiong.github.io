@@ -6,6 +6,48 @@ categories: [devops]
 tags: [devops, terraform]
 ---
 
+Building Terraform from source code is simple: `go build`. What is annoying is
+that we must execute it in folder with a `*.tf`. This conflicts with `delve`
+because the later needs to run inside Terraform source code folder, so I could
+not debug Terraform! I must missed some tricks somewhere. It should not be so
+stupid.
+
+All Terraform commands can be found
+[here](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/commands.go#L388).
+
+Q1: how does dynamodb lockfile work?
+
+## Terraform Core Components
+
+### Backend
+
+Interesting to see how module instance get its name
+[name](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/addrs/module_instance.go#L272).
+For example `module.app.module.db`.
+
+In construct, the name for a resource is
+[here](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/addrs/resource.go#L24).
+
+Absolute resource has
+[name](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/addrs/resource.go#L222).
+
+For example `module.app.module.db.aws_db_instance.db`.
+
+How to get the state file ?
+
+How state file is parsed?
+
+https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/states/statefile/read.go#L90
+
+`terraform state list` and `terraform state show` tells the backend state.
+
+`terraform state pull`: dump the remote state as terminal output in Json
+format. For example, if the `terraform.tfstate` file is stored in s3, then this
+command just dump its content as stdout in the current terminal.
+
+`terraform state push`: This is dangerous. It pushes local state file to
+remote.
+
 ## Terraform plugin
 
 Terraform provides a go library `terraform-plugin-framework` to help people
