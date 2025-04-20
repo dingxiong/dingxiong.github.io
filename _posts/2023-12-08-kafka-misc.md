@@ -1,7 +1,7 @@
 ---
 title: Kafka misc
 date: 2023-12-08 09:37 -0800
-categories: [kafka, misc]
+categories: [kafka]
 tags: [kafka]
 ---
 

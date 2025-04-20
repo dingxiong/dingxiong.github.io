@@ -1,7 +1,7 @@
 ---
 title: Kafka operations
 date: 2023-12-07 23:52 -0800
-categories: [kafka, misc]
+categories: [kafka]
 tags: [kafka, kcat]
 ---
 

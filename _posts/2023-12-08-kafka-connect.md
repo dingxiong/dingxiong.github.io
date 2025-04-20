@@ -2,7 +2,7 @@
 title: Kafka connect
 date: 2023-12-08 00:00 -0800
 categories:
-categories: [kafka, connect]
+categories: [kafka]
 tags: [kafka, kafka-connect]
 ---
 

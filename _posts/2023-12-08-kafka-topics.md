@@ -1,7 +1,7 @@
 ---
 title: Kafka topics
 date: 2023-12-08 09:31 -0800
-categories: [kafka, topic]
+categories: [kafka]
 tags: [kafka]
 ---
 

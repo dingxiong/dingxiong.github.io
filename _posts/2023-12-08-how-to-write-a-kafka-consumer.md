@@ -2,7 +2,7 @@
 layout: post
 title: How to write a Kafka consumer
 date: 2023-12-08 00:01 -0800
-categories: [kafka, consumer]
+categories: [kafka]
 tags: [kafka, consumer]
 ---
 

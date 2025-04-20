@@ -2,7 +2,7 @@
 layout: post
 title: Kafka configurations
 date: 2023-12-08 09:31 -0800
-categories: [kafka, misc]
+categories: [kafka]
 tags: [kafka]
 ---
 

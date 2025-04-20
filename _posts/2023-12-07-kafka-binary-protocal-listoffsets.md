@@ -1,7 +1,7 @@
 ---
 title: Kafka binary protocal -- ListOffsets
 date: 2023-12-07 17:40 -0800
-categories: [kafka, binary-protocol]
+categories: [kafka]
 tags: [kafka, binary-protocol, kcat, listoffsets]
 ---
 
