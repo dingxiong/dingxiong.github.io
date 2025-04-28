@@ -266,6 +266,12 @@ endpoint.
 Also, follow the official doc
 <https://microsoft.github.io/pyright/#/build-debug> to build pyright.
 
+### uv
+
+`uv` is much faster than `pip` to resolve version dependency because it uses a
+new algorithm [PubGrub](https://nex3.medium.com/pubgrub-2fb6470504f). Instead,
+`pip` uses a DFS approach.
+
 ## Misc
 
 ### conda, conda-forge and miniforge
