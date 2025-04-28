@@ -1,5 +1,5 @@
 ---
-title: dis module
+title: Python dis module
 date: 2023-11-25 23:03 -0800
 categories: [programming-language, python]
 tags: [dis]
