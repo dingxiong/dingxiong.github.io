@@ -266,6 +266,15 @@ endpoint.
 Also, follow the official doc
 <https://microsoft.github.io/pyright/#/build-debug> to build pyright.
 
+```
+npm run install:all
+cd packages/pyright
+npm run webpack
+```
+
+Note here we use `npm run webapck` instead of `npm run build` because the
+former is dev build, so it works with node debugger.
+
 ### uv
 
 `uv` is much faster than `pip` to resolve version dependency because it uses a
