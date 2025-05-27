@@ -8,11 +8,30 @@ tags: [assembly, arm, arm64, aarch64]
 
 Aarch64 is just arm64. The instruction set used in aarch64 is called A64.
 
-## Procedure Calls
+## Procedure Call Standard (PCS)
 
-The standard says that the first few parameters should be loaded to X0-X7. If
-more than 8 arguments, then the rest should be be put to stack. The return
-values is stored in X0.
+The
+[ARM standard](https://developer.arm.com/documentation/102374/0102/Procedure-Call-Standard)
+has a clear description of PCS.
+
+1. The first few parameters should be loaded to X0-X7. If more than 8
+   arguments, then the rest should be be put to stack.
+2. The return values is stored in X0, X0/X1 or X8 depending on the size of the
+   return value. Most functions return a single value (X0). Small structs (≤16
+   bytes) can be returned using X0 and X1. If the return struct is larger than
+   16 bytes. the caller will allocated some memory on stack and put the pointer
+   inside X8, and the callee will populate the content pointed by this pointer.
+   See the
+   [documentation](https://github.com/ARM-software/abi-aa/blob/main/aapcs64/aapcs64.rst#result-return)
+
+I learned two things. First, I learned that a C function can return a struct. I
+thought it can only return primitive or pointer types. Second, Aarch64 can use
+both X0 and X1 for return value. This fact confused me because why only X0, X1,
+but not extend to X2, X3 etc as well. I do not find any official documentation
+confirming it, and lost in LLVM backend code. However, LLVM can quickly
+generate C programs simulating all these scenarios, and from the assembly
+generated, I can confirm that this is true: as long as struct size goes beyond
+16 bytes, the caller and callee uses X8 to communicate return value.
 
 There is a noticeable difference for variadic functions in MacOS. The
 [MacOS ARM64 ABI](https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Update-code-that-passes-arguments-to-variadic-functions)
