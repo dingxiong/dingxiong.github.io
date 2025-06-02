@@ -7,6 +7,15 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2025-06-01
+
+From "F. E. Allen. Control flow analysis. SIGPLAN Notices, 5(7):1–19,
+July 1970. Proceedings of a Symposium on Compiler Optimization.":
+
+> is this an inner loop?, if an expression is removed from the loop where can
+> it be correctly and profitably placed?, which variable definitions can affect
+> this use?
+
 ## 2025-03-09
 
 Today I learned a new nvim plugin called `ltex-ls` which is grammar checker for
