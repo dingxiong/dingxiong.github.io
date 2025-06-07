@@ -4,6 +4,7 @@ title: QBE study notes
 date: 2025-06-07 11:33 -0700
 categories: [compiler, qbe]
 tags: [compiler, qbe]
+math: true
 ---
 
 ## Liveness analysis
@@ -27,22 +28,16 @@ is
 We need to two concepts that help us understand the iterative algorithm for
 computing liveness.
 
-> Definition: a variable (temp) a is live-in at node n if it is used at n
-> before any assignment in the same basic block, or if there is a path from n
+> Livein definition: a variable (temp) a is live-in at node n if it is used at
+> n before any assignment in the same basic block, or if there is a path from n
 > to a node that uses a that does not contain a definition of (assignment to)
 > a.
 
-> Definition: a variable a is live-out at node n if it is live-in at one of the
-> successors of n.
+> Liveout definition: a variable a is live-out at node n if it is live-in at
+> one of the successors of n.
 
 The sets in[n] and out[n] satisfy the equations
 
-$$
-\begin{equation}
-  \sum_{n=1}^\infty 1/n^2 = \frac{\pi^2}{6}
-  \label{eq:series}
-\end{equation}
-$$
+$$ in[n] = use[n] \cup (out[n] - def[n]) $$
 
-in[n] = use[n] \union (out[n] - def[n]) out[n] = \union { in[s] | s \in succ[n]
-}
+$$ out[n] = \bigcup \{ in[s] | s \in succ[n] \} $$
