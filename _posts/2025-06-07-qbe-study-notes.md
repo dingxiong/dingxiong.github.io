@@ -1,0 +1,48 @@
+---
+layout: post
+title: QBE study notes
+date: 2025-06-07 11:33 -0700
+categories: [compiler, qbe]
+tags: [compiler, qbe]
+---
+
+## Liveness analysis
+
+Most my knowledge about liveness analysis comes from book "Engineering a
+compiler" chapter 8.6.1 and Wikipedia
+[Live variable analysis](https://en.wikipedia.org/wiki/Live-variable_analysis).
+Why we need liveness analysis? First, it helps with register allocation.
+Registers are limited resources. Variables with no-overlapping liveness range
+can reuse registers. Second, liveness analysis is used to determine
+uninitialized variables and dead code. It is good for semantic analysis and
+optimization.
+
+So what does it mean by being alive for a variable? A variable is live if it
+holds a value that will/might be used in the future. A more formal definition
+is
+
+> A variable v is live at point p if and only if there exists a path in the cfg
+> from p to a use of v along which v is not redefined
+
+We need to two concepts that help us understand the iterative algorithm for
+computing liveness.
+
+> Definition: a variable (temp) a is live-in at node n if it is used at n
+> before any assignment in the same basic block, or if there is a path from n
+> to a node that uses a that does not contain a definition of (assignment to)
+> a.
+
+> Definition: a variable a is live-out at node n if it is live-in at one of the
+> successors of n.
+
+The sets in[n] and out[n] satisfy the equations
+
+$$
+\begin{equation}
+  \sum_{n=1}^\infty 1/n^2 = \frac{\pi^2}{6}
+  \label{eq:series}
+\end{equation}
+$$
+
+in[n] = use[n] \union (out[n] - def[n]) out[n] = \union { in[s] | s \in succ[n]
+}
