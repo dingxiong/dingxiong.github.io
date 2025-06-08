@@ -41,3 +41,15 @@ The sets in[n] and out[n] satisfy the equations
 $$ in[n] = use[n] \cup (out[n] - def[n]) $$
 
 $$ out[n] = \bigcup \{ in[s] | s \in succ[n] \} $$
+
+In SSA form, a block has zero or more phi functions at block entry. For an
+example phi function `x3 = phi(x1, x2)`. `x1` and `x2` are used before
+definition, therefore, they belong to the livein set of current block, and
+liveout set of the predecessor node. `x3` is defined at the start of the block,
+so it is definitely not in livein set of current block
+
+Man. I am lost in these formulas. I will come back.
+
+In QBE, the corresponding code is inside file `live.c`
+
+## SSA
