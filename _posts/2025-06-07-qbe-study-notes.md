@@ -7,6 +7,11 @@ tags: [compiler, qbe]
 math: true
 ---
 
+## SSA
+
+"A Simple, Fast Dominance Algorithm" by Keith D. Cooper is the only paper
+needed to understand SSA.
+
 ## Liveness analysis
 
 Most my knowledge about liveness analysis comes from references [1-3]. Please
@@ -47,15 +52,18 @@ naively, you think `b1` and `b2` are used without definition, so both should
 belong to `LiveIn(B3)`, and then `LiveOut(B1)` and `LiveOut(B2)` should
 contains `b1` and `b2` as well. This is very counter-intuitive. A more
 intuitive result should be $$ b1 \in LiveOut(B1) $$ and $$ b2 \in LiveOut(B2)
-$$ respectively. There is no single valid way to deal with phi functions in
+
+$$
+respectively. There is no single valid way to deal with phi functions in
 static analysis. Reference [3] section 3.3 confesses that different people use
 slightly different semantics to make their algorithms work. We usually follow
 [3]'s convention:
 
 $$ LiveIn(B) = PhiDefs(B) \cup UpwardExposed(B) \cup (LiveOut(B) - Defs(B))) $$
 
-$$ LiveOut(B) = \left( \bigcup\_{S \in succs(B)} \{ LiveIn(B) - PhiDefs(S) \}
-\right) \bigcup PhiUses(B) $$
+$$ LiveOut(B) = \left( \bigcup_{S \in succs(B)} \{ LiveIn(B) - PhiDefs(S) \}
+\right) \bigcup PhiUses(B)
+$$
 
 There two definitions are
 
@@ -77,10 +85,7 @@ and from [3]
 
 In QBE, the corresponding code is inside file `live.c`
 
-## SSA
-
-"A Simple, Fast Dominance Algorithm" by Keith D. Cooper is the only paper
-needed to understand SSA.
+## Sparse Conditional Constant Propagation (SCCP)
 
 ## References
 
