@@ -7,10 +7,16 @@ tags: [compiler, qbe]
 math: true
 ---
 
+[QBE](https://c9x.me/compile/) is small, easy to build.
+
+```
+$ make clean clean-gen
+$ bear -- make obj/qbe
+```
+
 ## SSA
 
-"A Simple, Fast Dominance Algorithm" by Keith D. Cooper is the only paper
-needed to understand SSA.
+[5] is the only paper needed to understand SSA.
 
 ## Liveness analysis
 
@@ -87,6 +93,32 @@ In QBE, the corresponding code is inside file `live.c`
 
 ## Sparse Conditional Constant Propagation (SCCP)
 
+[4] is a must read. This paper is easy to understand with zero background.
+
+[1] section 9.3.6 covers SSCP (Sparse Simple Constant Propagation). [1] section
+10.7.1 covers SCCP.
+
+Why it is called "sparse"? The algorithm only visits and revisits instructions
+or variables that might be affected by newly discovered constants. You maintain
+worklists of instructions or variables that may have changed or need
+re-analysis. You don't reprocess unrelated parts of the program.
+
+Lattice merge rule for phi functions.
+
+- Top ^ any = any
+- Bottom ^ any = Bottom
+- c1 ^ c2 = c1 == c2 ? c1 : Bottom.
+
+notes:
+
+> For each value-producing operation in the ir, sscp needs a set of rules that
+> model the operands’ behavior. Consider the operation a ×b. If a =4 and b=17,
+> the model should produce the value 68 for a ×b. However, if a =⊥, the model
+> should produce ⊥for any value of b except 0. Because a ×0=0, independent of
+> a’s value, a ×0 should produce the value 0.
+
+In QBE, the corresponding code is inside file `fold.c`.
+
 ## References
 
 [1] Book "Engineering a compiler" by Keith D. Cooper. Especially chapter 8.6.1.
@@ -96,3 +128,8 @@ In QBE, the corresponding code is inside file `live.c`
 
 [3] Paper "Computing Liveness Sets for SSA-Form Programs" by Benoit Boissinot,
 and etc.
+
+[4] Paper "Constant Propagation with Conditional Branches" by Mark Wegman, and
+etc.
+
+[5] Paper "A Simple, Fast Dominance Algorithm" by Keith D. Cooper and etc.
