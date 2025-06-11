@@ -2,7 +2,7 @@
 layout: post
 title: Terraform
 date: 2025-04-01 18:23 -0700
-categories: [devops]
+categories: [devops, cicd]
 tags: [devops, terraform]
 ---
 

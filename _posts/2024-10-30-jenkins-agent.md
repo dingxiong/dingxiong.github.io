@@ -2,7 +2,7 @@
 layout: post
 title: Jenkins -- Agent
 date: 2024-10-30 18:24 -0700
-categories: [devops]
+categories: [devops, cicd]
 tags: [devops, jenkins]
 ---
 

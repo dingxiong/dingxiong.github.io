@@ -2,7 +2,7 @@
 layout: post
 title: Elasticsearch and Opensearch
 date: 2024-03-29 15:26 -0700
-categories: [elk]
+categories: [devops, observability]
 tags: [elk, elasticsearch, opensearch]
 ---
 

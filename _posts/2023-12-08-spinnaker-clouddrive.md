@@ -1,7 +1,7 @@
 ---
 title: Spinnaker clouddrive
 date: 2023-12-08 10:00 -0800
-categories: [devops]
+categories: [devops, cicd]
 tags: [devops, spinnaker]
 ---
 

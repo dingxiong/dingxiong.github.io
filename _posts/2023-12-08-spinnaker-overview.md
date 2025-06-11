@@ -1,7 +1,7 @@
 ---
 title: Spinnaker overview
 date: 2023-12-08 10:01 -0800
-categories: [devops]
+categories: [devops, cicd]
 tags: [devops, spinnaker]
 ---
 
