@@ -2,7 +2,7 @@
 layout: post
 title: Kubernetes -- client-go
 date: 2025-03-07 16:11 -0800
-categories: [kubernetes]
+categories: [devops, kubernetes]
 tags: [kubernetes]
 ---
 

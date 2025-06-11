@@ -2,7 +2,7 @@
 layout: post
 title: Kubernetes -- Operations
 date: 2024-05-31 21:06 -0700
-categories: [kubernetes]
+categories: [devops, kubernetes]
 tags: [kubernetes]
 ---
 

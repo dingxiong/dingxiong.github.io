@@ -2,7 +2,7 @@
 layout: post
 title: Kubernetes -- Getting Started
 date: 2025-01-12 12:44 -0800
-categories: [kubernetes]
+categories: [devops, kubernetes]
 tags: [kubernetes]
 ---
 

@@ -2,7 +2,7 @@
 layout: post
 title: Kubernetes -- Pod
 date: 2025-01-12 12:45 -0800
-categories: [kubernetes]
+categories: [devops, kubernetes]
 tags: [kubernetes]
 ---
 

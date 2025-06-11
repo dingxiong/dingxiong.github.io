@@ -2,7 +2,7 @@
 layout: post
 title: Kubernetes Network
 date: 2024-04-13 22:28 -0700
-categories: [kubernetes]
+categories: [devops, kubernetes]
 tags: [kubernetes, cgroup, network]
 ---
 

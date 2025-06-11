@@ -2,7 +2,7 @@
 layout: post
 title: Assembly -- ARM
 date: 2025-02-02 01:11 -0800
-categories: [assembly]
+categories: [compiler, assembly]
 tags: [assembly, arm, arm64, aarch64]
 ---
 
