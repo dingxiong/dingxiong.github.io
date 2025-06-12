@@ -22,26 +22,30 @@ relationship is like below
 [ LocalDOMWindow ] ⇄ [ LocalWindowProxy ] ⇄ [ V8 JS Global Object (window) ]
 ```
 
-This global proxy maps all access to the internal proxied global object, and
+The corresponding code is
+[here](https://github.com/chromium/chromium/blob/a10195ea0eb340a429b3f21178853db210e17579/third_party/blink/renderer/bindings/core/v8/local_window_proxy.cc#L302).
+This global proxy maps all accesses to the internal proxied global object, and
 then this global object in JS is hooked with the corresponding C++ object
 through V8. Why do we need a proxy but not expose the global object directly?
 Please see comment
 [here](https://github.com/chromium/chromium/blob/a10195ea0eb340a429b3f21178853db210e17579/third_party/blink/renderer/bindings/core/v8/window_proxy.h#L47).
-This global proxy is used for interpreting JS code. When you type `window` in
-the dev tools console, JS will try to locate this attribute in the current
-scope. If not found, it goes above to global scope and looks for the same
-attribute of the global proxy. Therefore, code line `window` really means
-`<the-global-proxy>.window`. This attributes exits and it is clearly specified
-inside the
+
+When you type `window` in the dev tools console, JS tries to locate this
+attribute in the current scope. If not found, it goes above to global scope and
+looks for the same attribute on the global proxy. Therefore, code `window`
+really means `<the-global-proxy>.window`. This attributes exits and it is
+clearly specified inside the
 [IDL file](https://github.com/chromium/chromium/blob/a10195ea0eb340a429b3f21178853db210e17579/third_party/blink/renderer/core/frame/window.idl#L39).
 The corresponding implementation is
 [here](https://github.com/chromium/chromium/blob/a10195ea0eb340a429b3f21178853db210e17579/third_party/blink/renderer/core/frame/dom_window.cc#L314).
-It just return itself!
+It returns itself!
 
 `self` is defined in the IDL file and the implementation is the same as
-`window`, so `self` is just an alias for `window`. However, this is only valid
-for browser, in node, the global object is called `global`. To consolidate
-these names, ECMAScript 2020 propose a name `globalThis`.
+`window`, so `self` is a simple alias for `window`.
+
+`window` or `self` cannot be used in the browser environment. In node, the
+global object is called `global`. To consolidate these names, ECMAScript 2020
+propose a name `globalThis`.
 
 ## SCP (Content Security Policy)
 
