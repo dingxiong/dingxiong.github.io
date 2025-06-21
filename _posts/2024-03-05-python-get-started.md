@@ -199,6 +199,12 @@ $19 = (FILE *) 0x5630fc64f370
 See value of
 https://github.com/python/cpython/blob/878ead1ac1651965126322c1b3d124faf5484dc6/Include/pystate.h#L77
 
+Another way to get stack trace is using `py-spy` package.
+
+```
+py-spy dump --pid <pid>
+```
+
 ## Python syntax
 
 ### Class

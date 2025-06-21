@@ -6,6 +6,29 @@ categories: [frontend]
 tags: [frontend, chrome]
 ---
 
+## Build
+
+Follow the
+[official doc](https://chromium.googlesource.com/chromium/src/+/main/docs/mac_build_instructions.md).
+
+```
+cd code
+git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git --depth=1
+export PATH="$HOME/code/depot_tools:$PATH"
+
+mkdir chromium && cd chromium
+caffeinate fetch --no-history chromium
+cd src
+gn gen out/default
+
+# check `ulimit -n`. If too small, need increase it.
+ulimit -n 65536
+caffeinate autoninja -C out/default chrome
+```
+
+It took about 15 min to checkout and 6 hours to build on my MacBook M1. This
+repo ships with llvm and it builds llvm on the way!
+
 ## The global window object
 
 I am always wondering about the usage of `window` variable inside JS code. It
