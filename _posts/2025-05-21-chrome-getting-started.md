@@ -24,6 +24,10 @@ gn gen out/default
 # check `ulimit -n`. If too small, need increase it.
 ulimit -n 65536
 caffeinate autoninja -C out/default chrome
+python tools/clang/scripts/generate_compdb.py -p out/default/ -o ./compile_commands.json
+
+# run it
+$HOME/code/chromium/src/out/default/Chromium.app/Contents/MacOS/Chromium
 ```
 
 It took about 15 min to checkout and 6 hours to build on my MacBook M1. This
