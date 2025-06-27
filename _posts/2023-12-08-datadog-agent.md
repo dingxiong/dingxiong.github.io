@@ -50,6 +50,10 @@ subcommand!. The entry point is
 As you can imagine, this `run` subcommand does a lot of things. Let's dive into
 each sub component one by one.
 
+### Debug
+
+`agent config set log_level debug` to update log level on the fly.
+
 ### Log agent
 
 Datadog is installed as a DaemonSet in Kubernetes and if enabled, it
