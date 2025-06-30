@@ -362,6 +362,70 @@ shutdown. See this [issue](https://github.com/celery/celery/issues/4354).
 In `solo` mode, worker controller itself executes the task. In `prefork` mode,
 worker controller hands the task to worker processes.
 
+How does controller manage worker processes? It registers `maintain_pool`
+function into the event loop as a time trigger for every
+[5 seconds.](https://github.com/celery/celery/blob/feaad3f9fdf98d0453a07a68e307e48c6c3c2550/celery/concurrency/asynpool.py#L1358)
+The stack trace of `maintain_pool` is as follows,
+
+```
+  File "/usr/local/lib/python3.11/site-packages/celery/bootsteps.py", line 116, in start
+    step.start(parent)
+  File "/usr/local/lib/python3.11/site-packages/celery/worker/consumer/consumer.py", line 772, in start
+    c.loop(*c.loop_args())
+  File "/usr/local/lib/python3.11/site-packages/celery/worker/loops.py", line 97, in asynloop
+    next(loop)
+  File "/usr/local/lib/python3.11/site-packages/kombu/asynchronous/hub.py", line 308, in create_loop
+    poll_timeout = fire_timers(propagate=propagate) if scheduled else 1
+  File "/usr/local/lib/python3.11/site-packages/kombu/asynchronous/hub.py", line 149, in fire_timers
+    entry()
+  File "/usr/local/lib/python3.11/site-packages/kombu/asynchronous/timer.py", line 70, in __call__
+    return self.fun(*self.args, **self.kwargs)
+  File "/usr/local/lib/python3.11/site-packages/kombu/asynchronous/timer.py", line 137, in _reschedules
+    return fun(*args, **kwargs)
+```
+
+One special note about `after_fork` hook. The controller process keeps sending
+`BRPOP` to Redis server, and register the socket fd to epoll event loop. So an
+immediate action for forked worker is to clean up these sockets or triggers.
+Otherwise, the worker process will mess up with the controller. This is what
+the
+[after_fork](https://github.com/celery/kombu/blob/666ee7e02fa7de65506400f2bec062242e9b2474/kombu/transport/redis.py#L768)
+is for. Belong is the corresponding stack trace.
+
+```
+  File "/usr/local/lib/python3.11/site-packages/celery/concurrency/asynpool.py", line 496, in _event_process_exit
+    self.maintain_pool()
+  File "/usr/local/lib/python3.11/site-packages/billiard/pool.py", line 1351, in maintain_pool
+    self._maintain_pool()
+  File "/usr/local/lib/python3.11/site-packages/billiard/pool.py", line 1343, in _maintain_pool
+    self._repopulate_pool(joined)
+  File "/usr/local/lib/python3.11/site-packages/billiard/pool.py", line 1328, in _repopulate_pool
+    self._create_worker_process(self._avail_index())
+  File "/usr/local/lib/python3.11/site-packages/celery/concurrency/asynpool.py", line 491, in _create_worker_process
+    return super()._create_worker_process(i)
+  File "/usr/local/lib/python3.11/site-packages/billiard/pool.py", line 1158, in _create_worker_process
+    w.start()
+  File "/usr/local/lib/python3.11/site-packages/billiard/process.py", line 120, in start
+    self._popen = self._Popen(self)
+  File "/usr/local/lib/python3.11/site-packages/billiard/context.py", line 331, in _Popen
+    return Popen(process_obj)
+  File "/usr/local/lib/python3.11/site-packages/billiard/popen_fork.py", line 22, in __init__
+    self._launch(process_obj)
+  File "/usr/local/lib/python3.11/site-packages/billiard/popen_fork.py", line 77, in _launch
+    code = process_obj._bootstrap()
+  File "/usr/local/lib/python3.11/site-packages/billiard/process.py", line 316, in _bootstrap
+    util._run_after_forkers()
+  File "/usr/local/lib/python3.11/multiprocessing/util.py", line 170, in _run_after_forkers
+    func(obj)
+  File "/usr/local/lib/python3.11/site-packages/kombu/transport/redis.py", line 185, in _after_fork_cleanup_channel
+    channel._after_fork()
+```
+
+Note, this is not the only place that after fork hooks are registered. The
+other wired place is
+[here](https://github.com/celery/kombu/blob/666ee7e02fa7de65506400f2bec062242e9b2474/kombu/resource.py#L52).
+As the name suggests, it is the last after fork hook to run.
+
 ## Task
 
 When we add annotation `@celery_app.task` to a function, it registers this
