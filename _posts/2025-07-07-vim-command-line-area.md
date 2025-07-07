@@ -216,3 +216,29 @@ character at the end of each line in a range? One way is
 The implementation is
 [here](https://github.com/neovim/neovim/blob/8fe4e120a2de558fddbb91ba5438d78f3dbd926a/src/nvim/ex_docmd.c#L6920).
 Basically, it runs the same command for each line in the range selection.
+
+### `:luado`
+
+This command executes a chunk of Lua code that acts on a range of lines in the
+current buffer. Whatever string is returned from the chunk is used to determine
+what each line should be replaced with. Two implicit `line` and `linenr`
+variables are also provided. `line` is the text of the line being iterated upon
+whereas `linenr` is its number.
+
+Examples:
+
+1. `:<range>luado return line:upper()` converts selected lines to upper case.
+2. `:<range>luado return line .. ';'` adds semicolon at the end of each line.
+3. `:<range>luado return '"' + line + '"'` adds double quotes around each line.
+
+Source code
+[here](https://github.com/neovim/neovim/blob/8fe4e120a2de558fddbb91ba5438d78f3dbd926a/src/nvim/lua/executor.c#L1695).
+You can see that it generates a function `function(line, linenr)` and pushes it
+to stack. Then it executes this function for each selected line. If the
+function returns a string, then it uses this string to replace existing buffer
+content:
+
+```
+ml_replace(l, new_line_transformed, false);
+inserted_bytes(l, 0, old_line_len, (int)new_line_len);
+```
