@@ -184,6 +184,35 @@ It is fairly complicated! You can write `if`, `for` and `while` control flow
 statements in the Command-line area. And can also use `|` to pipe multiple
 commands into one.
 
-The first question is how vim interpret control flow statement. For example,
-`while`'s implementation is
+`do_cmdline` sets up the skeleton of the interpreter. The actual implementation
+for each semantic keyword/structure is scattered in different places. For
+example, `while`'s implementation is
 [here](https://github.com/neovim/neovim/blob/8fe4e120a2de558fddbb91ba5438d78f3dbd926a/src/nvim/ex_eval.c#L978).
+You can search `void ex_` in file `ex_eval.c`, `ex_cmds.c` and `ex_docmd.c` to
+find out what commands Vim has defined and their implementations.
+
+### :! command
+
+The Bang command is very powerful. The implementation is
+[here](https://github.com/neovim/neovim/blob/8fe4e120a2de558fddbb91ba5438d78f3dbd926a/src/nvim/ex_docmd.c#L6451).
+
+There are three mainly use cases.
+
+1. `:!<cmd>`: run cmd and show the output in command-line area.
+2. `:r!<cmd>`: run cmd and insert the output to the current cursor location.
+   This is actually a compound command. `r` means `read` which is another vim
+   command, and pattern `r!` has a special
+   [code path](https://github.com/neovim/neovim/blob/8fe4e120a2de558fddbb91ba5438d78f3dbd926a/src/nvim/ex_docmd.c#L5903).
+   Therefore, `:r!date` is shorthand of `:read!date`.
+3. `%<range>!<cmd>`: use line range as input to the command, and use the output
+   to overwrite this range. This is useful for reformatting code.
+
+### `:normal` command
+
+`normal` is another commonly used command. For example, how to insert a
+character at the end of each line in a range? One way is
+`:<range>normal A<char>`.
+
+The implementation is
+[here](https://github.com/neovim/neovim/blob/8fe4e120a2de558fddbb91ba5438d78f3dbd926a/src/nvim/ex_docmd.c#L6920).
+Basically, it runs the same command for each line in the range selection.
