@@ -23,79 +23,117 @@ me.
 👉 Command-line ebnf grammar 👈
 </summary>
 
+<!-- prettier-ignore-start -->
+
 {% highlight ebnf %}
 
-(_ Main Program Structure _) program ::= command_sequence command_sequence ::=
-command_line (newline command_line)_ command_line ::= command ('|' command)_
+(* Main Program Structure *)
+program ::= command_sequence
+command_sequence ::= command_line (newline command_line)*
+command_line ::= command ('|' command)*
 
-(_ Basic Command Structure _) command ::= simple_command | control_structure |
-exception_structure | loop_structure | conditional_structure
+(* Basic Command Structure *)
+command ::= simple_command 
+          | control_structure
+          | exception_structure
+          | loop_structure
+          | conditional_structure
 
 simple_command ::= command_name arguments?
 
-(_ Control Structures _) control_structure ::= if_structure | while_structure  
- | for_structure | try_structure | function_definition
+(* Control Structures *)
+control_structure ::= if_structure
+                    | while_structure  
+                    | for_structure
+                    | try_structure
+                    | function_definition
 
-(_ Conditional Structures _) if_structure ::= 'if' condition newline
-command_sequence ('elseif' condition newline command_sequence)\* ('else'
-newline command_sequence)? 'endif'
+(* Conditional Structures *)
+if_structure ::= 'if' condition newline
+                 command_sequence
+                 ('elseif' condition newline command_sequence)*
+                 ('else' newline command_sequence)?
+                 'endif'
 
 conditional_structure ::= if_structure
 
-(_ Loop Structures _) while_structure ::= 'while' condition newline
-command_sequence 'endwhile'
+(* Loop Structures *)
+while_structure ::= 'while' condition newline
+                    command_sequence
+                    'endwhile'
 
-for_structure ::= 'for' variable 'in' iterable newline command_sequence
-'endfor'
+for_structure ::= 'for' variable 'in' iterable newline
+                  command_sequence
+                  'endfor'
 
 loop_structure ::= while_structure | for_structure
 
-(_ Exception Handling _) try_structure ::= 'try' newline command_sequence
-('catch' pattern? newline command_sequence)\* ('finally' newline
-command_sequence)? 'endtry'
+(* Exception Handling *)
+try_structure ::= 'try' newline
+                  command_sequence
+                  ('catch' pattern? newline command_sequence)*
+                  ('finally' newline command_sequence)?
+                  'endtry'
 
 exception_structure ::= try_structure
 
-(_ Function Definition _) function_definition ::= 'function' function_name '('
-parameter_list? ')' function_attributes? newline command_sequence 'endfunction'
+(* Function Definition *)
+function_definition ::= 'function' function_name '(' parameter_list? ')' function_attributes? newline
+                       command_sequence
+                       'endfunction'
 
-(_ Loop Control _) loop_control ::= 'continue' | 'break'
+(* Loop Control *)
+loop_control ::= 'continue' | 'break'
 
-(_ Function Control _) function_control ::= 'return' expression?
+(* Function Control *)
+function_control ::= 'return' expression?
 
-(_ File Control _) file_control ::= 'finish'
+(* File Control *)
+file_control ::= 'finish'
 
-(_ Terminals and Primitives _) command_name ::= identifier range_prefix?
+(* Terminals and Primitives *)
+command_name ::= identifier range_prefix?
 
 range_prefix ::= range ':'?
 
 range ::= line_specifier (',' line_specifier)?
 
-line_specifier ::= number | '.' | '$' | '%' | "'" mark | '/' pattern '/' | '?'
-pattern '?' | line_specifier ('+' | '-') number?
+line_specifier ::= number
+                 | '.'
+                 | '$'
+                 | '%'
+                 | "'" mark
+                 | '/' pattern '/'
+                 | '?' pattern '?'
+                 | line_specifier ('+' | '-') number?
 
 condition ::= expression
 
-expression ::= (_ Complex expression grammar - simplified _) | variable |
-literal | function_call | binary_operation | unary_operation
+expression ::= (* Complex expression grammar - simplified *)
+             | variable
+             | literal
+             | function_call
+             | binary_operation
+             | unary_operation
 
 variable ::= identifier
 
 literal ::= string_literal | number_literal
 
-string_literal ::= '"' string_content '"' | "'" string_content "'"
+string_literal ::= '"' string_content '"'
+                 | "'" string_content "'"
 
 number_literal ::= digit+ ('.' digit+)?
 
 function_call ::= function_name '(' argument_list? ')'
 
-argument_list ::= expression (',' expression)\*
+argument_list ::= expression (',' expression)*
 
-parameter_list ::= parameter (',' parameter)\*
+parameter_list ::= parameter (',' parameter)*
 
 parameter ::= identifier
 
-function_attributes ::= attribute\*
+function_attributes ::= attribute*
 
 attribute ::= 'range' | 'abort' | 'dict' | 'closure'
 
@@ -103,10 +141,10 @@ binary_operation ::= expression operator expression
 
 unary_operation ::= operator expression
 
-operator ::= '+' | '-' | '\*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' |
-'>=' | '&&' | '||' | '=~' | '!~' | 'is' | 'isnot'
+operator ::= '+' | '-' | '*' | '/' | '%' | '==' | '!=' | '<' | '>' | '<=' | '>=' 
+           | '&&' | '||' | '=~' | '!~' | 'is' | 'isnot'
 
-arguments ::= argument\*
+arguments ::= argument*
 
 argument ::= expression | flag | option_setting
 
@@ -114,7 +152,7 @@ flag ::= '+' | '-' | '!'
 
 option_setting ::= identifier '=' expression
 
-identifier ::= letter (letter | digit | '\_')\*
+identifier ::= letter (letter | digit | '_')*
 
 letter ::= 'a'..'z' | 'A'..'Z'
 
@@ -122,22 +160,24 @@ digit ::= '0'..'9'
 
 mark ::= letter
 
-pattern ::= (_ Regular expression pattern _)
+pattern ::= (* Regular expression pattern *)
 
 iterable ::= expression
 
 newline ::= '\n' | '\r\n'
 
-string_content ::= (_ Any characters except closing quote _)
+string_content ::= (* Any characters except closing quote *)
 
 function_name ::= identifier
 
-(_ Comments _) comment ::= '"' comment_content
+(* Comments *)
+comment ::= '"' comment_content
 
-comment_content ::= (_ Any characters to end of line _)
+comment_content ::= (* Any characters to end of line *)
 
 {% endhighlight %}
 
+<!-- prettier-ignore-end -->
 </details>
 
 It is fairly complicated! You can write `if`, `for` and `while` control flow
