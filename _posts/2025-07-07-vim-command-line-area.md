@@ -7,8 +7,8 @@ tags: [editor, vim]
 ---
 
 In Vim, the bottom line where you type commands like `:w`, `:q`, or `/pattern`
-is called Command-line area. I used it everyday, but never know the exact
-syntax and how the interpreter works.
+is called Command-line area. I use it everyday, but never know its exact syntax
+and how the interpreter works. This post is for this purpose.
 
 ## Grammar
 
@@ -191,7 +191,7 @@ example, `while`'s implementation is
 You can search `void ex_` in file `ex_eval.c`, `ex_cmds.c` and `ex_docmd.c` to
 find out what commands Vim has defined and their implementations.
 
-### :! command
+### `:!`
 
 The Bang command is very powerful. The implementation is
 [here](https://github.com/neovim/neovim/blob/8fe4e120a2de558fddbb91ba5438d78f3dbd926a/src/nvim/ex_docmd.c#L6451).
@@ -207,7 +207,7 @@ There are three mainly use cases.
 3. `%<range>!<cmd>`: use line range as input to the command, and use the output
    to overwrite this range. This is useful for reformatting code.
 
-### `:normal` command
+### `:normal`
 
 `normal` is another commonly used command. For example, how to insert a
 character at the end of each line in a range? One way is
