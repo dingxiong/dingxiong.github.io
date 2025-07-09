@@ -111,16 +111,13 @@ infrastructure changes together with updating the state file.
 local one. It is dangerous and should only be used for disaster recovery or
 importing large chunk of existing infrastructure.
 
-How to get the state file ?
-
-How state file is parsed?
-
-https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/states/statefile/read.go#L90
+How state file is parsed? See
+[code](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/states/statefile/read.go#L90).
 
 ### Import State
 
 In order to bring existing infrastructure to Terraform, we need to do one-time
-effort of including it to the terraform state. This can be down by
+effort of including it to the terraform state. This can be done by
 `terraform import` or `terraform plan/apply`. The syntax is
 
 ```
@@ -155,8 +152,11 @@ matching this id. Depending on the resource type, the meaning of id is
 different. For AWS EC2, the id the EC2 id. For AWS RDS cluster, the id is the
 cluster name. A provider
 [proto function](https://github.com/hashicorp/terraform-plugin-go/blob/ee6e52ba66ed669583b507f13068b818bce39614/tfprotov6/internal/tfplugin6/tfplugin6_grpc.pb.go#L371)
-is reserved for this purpose. It is called at
-[here](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/terraform/node_resource_plan_instance.go#L652)
+is reserved for this purpose. It is called
+[here](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/terraform/node_resource_plan_instance.go#L652).
+You do not need to guess the format of `id`. Instead, each resource type has
+import examples at the end of the terraform documentation page. See
+[msk cluster example](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/msk_cluster#import).
 
 ### How does Plan Walk the Resource Tree?
 
@@ -186,8 +186,8 @@ distributed lock. There are two records in the table.
 ```
 LockID                      | Digest
 ----------------------------| -----
-state-s3-path               | <empty>
-state-s3-path-<md5-suffix>  | xxxxx..
+<state-s3-path>               | <empty>
+<state-s3-path>-<md5-suffix>  | xxxxx..
 ```
 
 The first record is the lock. Usually, it is not there because it only exits
@@ -196,6 +196,9 @@ between `lock` and `unlock` which is an transient state.
 The second record is the md5 hash of the state content. When the state is
 updated, the md5 is updated at the same time. See
 [code](https://github.com/hashicorp/terraform/blob/5c4c6698822424793508642701185c04f32b05a4/internal/backend/remote-state/s3/client.go#L240).
+
+Sometime, `terraform plan` may fail in the middle without release the state
+lock. You can delete lock entry in the backend manually, and rerun the command.
 
 ### Logging
 
