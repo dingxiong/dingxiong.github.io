@@ -42,7 +42,7 @@ that it puts the intermediate evaluation result back to the augmented context.
 Let's go deeper into SpEL (maybe I should open a new note for it). How is an
 expression evaluated? Most time we use
 [TemplateParserContext](https://github.com/spring-projects/spring-framework/blob/a3b979c5ecb7eda96ebf264672ce522177c6fc77/spring-expression/src/main/java/org/springframework/expression/common/TemplateParserContext.java#L38)
-so the expressions are enclosed inside a `${`, `$}` pair. Expressions are first
+so the expressions are enclosed inside a `${`, `}` pair. Expressions are first
 parsed and then
 [evaluated](https://github.com/spinnaker/kork/blob/cf76e731d4201d0972cec6197a0f2536046e4537/kork-expressions/src/main/java/com/netflix/spinnaker/kork/expressions/ExpressionTransform.java#L177).
 This `getValue` function is where the interesting story starts. This method is
