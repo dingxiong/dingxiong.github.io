@@ -80,4 +80,4 @@ work needs to be done. The overhead is around 100 nanoseconds.
 If you are concerned about syscall performance, just use `time` command. It
 shows `user` and `sys` time respectively.
 
-## Vdso
+## vDSO

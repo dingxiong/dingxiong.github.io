@@ -127,7 +127,7 @@ Glibc is the standard C library for the GNU operating system and other systems
 that use the Linux kernel. For a long time, I am confused by what exactly glibc
 provides because I saw lots of code that include headers such as
 `<sys/epoll.h>` and `<unistd.h>`. I definitely did not see these headers when I
-was learning C when I was a undergraduate. Cited from glibc's
+was learning C as a undergraduate. Cited from glibc's
 [home page](https://www.gnu.org/software/libc/)
 
 > The GNU C Library - The project provides the core libraries for the GNU
