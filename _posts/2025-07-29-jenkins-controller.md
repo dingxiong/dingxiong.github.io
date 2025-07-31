@@ -84,9 +84,85 @@ based annotations such as
 [OptionalExtension](https://github.com/jenkinsci/kubernetes-plugin/blob/48ea4aa66d7f0f4c28c612e602fb73cfc363c2c0/src/main/java/org/csanchez/jenkins/plugins/kubernetes/pipeline/KubernetesDeclarativeAgent.java#L463-L463).
 I see `@OptionalExtension` is used more often than `@Extension` because it can
 defines the requirements such that the subclass is only registered when a
-dependent package exist.
+dependent package exists.
 
-## EnvVar
+When you add a new job using Jenkins UI. It pops up a list with all existing
+job types. With a fresh installation, I only see `Freestype project` and
+`Pipeline`. ![Jenkins add a new job type](/assets/images/jenkins_new_item.png).
+The next section walks you through Pipeline gotchas.
+
+## WorkflowJob, aka Pipeline
+
+`Pipeline` needs 3 packages to run: `workflow-job-plugin`,
+`workflow-cps-plugin` and `pipeline-model-definition-plugin`. See the bottom
+table for their relationship. There are two types of pipelines: declarative and
+scripted.
+
+Declarative is like
+
+```
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Building...'
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Testing...'
+            }
+        }
+    }
+}
+```
+
+Scripted is like
+
+```
+node {
+    stage('Build') {
+        echo 'Building...'
+    }
+
+    stage('Test') {
+        echo 'Testing...'
+    }
+}
+```
+
+To be honest, I do not see too many differences between the two styles, and
+more importantly, the declarative style is parsed as Groovy code as well.
+
+### Parsing
+
+Let's use the example build result
+[build.xml](/assets/raw/jenkins_build.xml.txt) to illustrate the parsing
+process. Most parsing logic happens in
+[ModelParser.groovy](https://github.com/jenkinsci/pipeline-model-definition-plugin/blob/4e96d2bdaf9b06c5feb5ec544799e4f6c11e1056/pipeline-model-definition/src/main/groovy/org/jenkinsci/plugins/pipeline/modeldefinition/parser/ModelParser.groovy#L232-L232).
+At the top level, you should define `agent` and `stages`. In our example, the
+agent is defined as
+
+```
+agent {
+  kubernetes {
+    defaultContainer "manage-kafka";
+    yaml "..."
+  }
+}
+```
+
+I suggest you spend 5min reading the `parseAgent` function implementation. It
+is amazing to see that `agent {...}` is parsed as a function call and
+`kubernetes {...}` is parsed as a function call as well. Recall that in Groovy,
+functions can be called either in the form of `func(arg1, arg2)` or
+`func arg1 arg2` and the last argument can be a closure, so `agent {...}` means
+calling a function named `agent` with only one argument and this argument is a
+closure. Amazing right? Groovy is born for DSL. The last time I had the similar
+excitement was when I realized Ruby is born for DSL.
+
+### EnvVar
 
 ## Extension Annotation
 
@@ -141,6 +217,11 @@ up in the list.
 | `doXYZ()`   | Bound to URL endpoint          | `/.../xyz`                                   |
 | `getXYZ()`  | Usually bound as a property    | `/.../xyz/` (sometimes), or `api/json` field |
 
+## UI
+
+- How the UI is hooked up? Ex. the
+  [pipeline image](https://github.com/jenkinsci/workflow-job-plugin/blob/bb774a98ae4f44f178ce96aee631ce3474dd7e88/src/main/resources/images/symbols/pipeline.svg).
+
 ## Plugin/Package Index
 
 <table>
@@ -171,7 +252,7 @@ up in the list.
     <td> workflow-job-plugin </td>
     <td> workflow-api-plugin </td>
     <td>
-        Define pipeline job type.
+        Provides the base job type (WorkflowJob, WorkflowRun) for pipeline jobs.
     </td>
     <td/>
   </tr>
@@ -179,7 +260,7 @@ up in the list.
     <td> workflow-cps-plugin </td>
     <td> workflow-job-plugin </td>
     <td>
-        Pipeline Execution Engine	
+        Provides the engine that runs Groovy-based scripted and declarative Pipelines.
     </td>
     <td/>
   </tr>
@@ -187,8 +268,20 @@ up in the list.
     <td> pipeline-model-definition-plugin </td>
     <td> workflow-cps-plugin </td>
     <td>
-        Declarative Syntax Parser
+        <ul>
+        <li>Provides support for Declarative Pipeline syntax<br>
+          (e.g., pipeline { agent any; stages { ... } }).
+        </li>
+        <li>Converts the high-level declarative DSL into lower-level<br>
+          CPS-executable Groovy code.
+        </li>
+        <li> Includes validation logic for declarative structure and its <br>
+          restrictions (e.g., you can't just put arbitrary Groovy code in pipeline {}).
+        </li>
+        </ul>
+
     </td>
     <td/>
+
   </tr>
 </table>
