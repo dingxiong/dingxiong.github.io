@@ -30,7 +30,7 @@ A job can be executed. Each single execution is called a
 [Run/Build](https://github.com/jenkinsci/jenkins/blob/235d237f32835ccc1064c95c701f331d7dece7a3/core/src/main/java/hudson/model/Run.java).
 All these entities are dumped to disk as
 `${JENKINS_HOME}/jobs/<job-name>/builds/<build-id>`. For example, this
-[build.xml](/assets/raw/jenkins_build.xml.txt) is sample run of a Jenkins
+[build.xml](/assets/raw/jenkins_build.xml.txt) is a sample run of a Jenkins
 pipeline.
 
 | Annotation  | Purpose                        | Resulting Endpoint                           |
@@ -39,9 +39,25 @@ pipeline.
 | `doXYZ()`   | Bound to URL endpoint          | `/.../xyz`                                   |
 | `getXYZ()`  | Usually bound as a property    | `/.../xyz/` (sometimes), or `api/json` field |
 
+## EnvVar
+
+## Extension Annotation
+
+- How it works?
+- How inverse injection works? Comparison to python `__init_subclass__`.
+- How Symbol annotation work
+
 ## Script Console
 
 ## Agent
+
+### Agent parser
+
+### Pipeline execution
+
+1. It is a groovy script
+2. `agent {}` is actually a function call. It is a great disguise as a DSL.
+3. so how the functions are called? where defined? what arguments?
 
 ```groovy
 import org.jenkinsci.plugins.pipeline.modeldefinition.agent.DeclarativeAgentDescriptor
