@@ -1,0 +1,358 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-build plugin="workflow-job@1316.vd2290d3341a_f">
+  <actions>
+    <hudson.model.ParametersAction>
+      <safeParameters class="sorted-set"/>
+      <parameters>
+        <hudson.model.StringParameterValue>
+          <name>image_name</name>
+          <value>242230929264.dkr.ecr.us-east-2.amazonaws.com/evergreen-server:Build35897_2025_07_30_mast_07e8cbe5e3b_Seiji_Chew</value>
+        </hudson.model.StringParameterValue>
+      </parameters>
+      <parameterDefinitionNames>
+        <string>image_name</string>
+      </parameterDefinitionNames>
+    </hudson.model.ParametersAction>
+    <hudson.model.CauseAction>
+      <causeBag class="linked-hash-map">
+        <entry>
+          <hudson.model.Cause_-UserIdCause>
+            <userId>admin</userId>
+          </hudson.model.Cause_-UserIdCause>
+          <int>1</int>
+        </entry>
+      </causeBag>
+    </hudson.model.CauseAction>
+    <jenkins.metrics.impl.TimeInQueueAction plugin="metrics@4.2.18-439.v86a_20b_a_8318b_">
+      <queuingDurationMillis>9574</queuingDurationMillis>
+      <blockedDurationMillis>0</blockedDurationMillis>
+      <buildableDurationMillis>0</buildableDurationMillis>
+      <waitingDurationMillis>9573</waitingDurationMillis>
+    </jenkins.metrics.impl.TimeInQueueAction>
+    <hudson.plugins.git.util.BuildData plugin="git@5.2.0">
+      <buildsByBranchName>
+        <entry>
+          <string>refs/remotes/origin/master</string>
+          <hudson.plugins.git.util.Build>
+            <marked plugin="git-client@4.4.0">
+              <sha1>07e8cbe5e3bbb05ec6f6b1c9123e456fa1965816</sha1>
+              <branches class="list">
+                <hudson.plugins.git.Branch>
+                  <sha1 reference="../../../sha1"/>
+                  <name>refs/remotes/origin/master</name>
+                </hudson.plugins.git.Branch>
+              </branches>
+            </marked>
+            <revision reference="../marked"/>
+            <hudsonBuildNumber>17750</hudsonBuildNumber>
+          </hudson.plugins.git.util.Build>
+        </entry>
+      </buildsByBranchName>
+      <lastBuild reference="../buildsByBranchName/entry/hudson.plugins.git.util.Build"/>
+      <remoteUrls>
+        <string>https://ghp_xxx@github.com/Greenbax/evergreen.git</string>
+      </remoteUrls>
+      <index>2</index>
+    </hudson.plugins.git.util.BuildData>
+    <org.jenkinsci.plugins.workflow.steps.scm.MultiSCMRevisionState plugin="workflow-scm-step@415.v434365564324">
+      <revisionStates>
+        <entry>
+          <string>git https://ghp_xxx@github.com/Greenbax/evergreen.git</string>
+          <hudson.scm.SCMRevisionState_-None/>
+        </entry>
+      </revisionStates>
+    </org.jenkinsci.plugins.workflow.steps.scm.MultiSCMRevisionState>
+    <org.jenkinsci.plugins.workflow.libs.LibrariesAction plugin="pipeline-groovy-lib@656.va_a_ceeb_6ffb_f7">
+      <libraries/>
+    </org.jenkinsci.plugins.workflow.libs.LibrariesAction>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.actions.ExecutionModelAction plugin="pipeline-model-definition@2.2141.v5402e818a_779">
+      <stagesUUID>7ba74fbc-b0a6-4ce6-be5e-d4e2576d1e6d</stagesUUID>
+      <pipelineDefs>
+        <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTPipelineDef plugin="pipeline-model-api@2.2141.v5402e818a_779">
+          <stages>
+            <stages>
+              <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTStage>
+                <name>run</name>
+                <branches>
+                  <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTBranch>
+                    <name>default</name>
+                    <steps>
+                      <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTTreeStep>
+                        <name>container</name>
+                        <args class="org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTSingleArgument">
+                          <value class="org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTValue$ConstantValue">
+                            <value class="string">manage-kafka</value>
+                          </value>
+                        </args>
+                        <children>
+                          <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTScriptBlock>
+                            <name>script</name>
+                            <args class="org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTNamedArgumentList">
+                              <arguments class="linked-hash-map">
+                                <entry>
+                                  <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTKey>
+                                    <key>scriptBlock</key>
+                                  </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTKey>
+                                  <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTValue_-ConstantValue>
+                                    <value class="string">sh &apos;cd /app &amp;&amp; fab kafka-sync-topics&apos;</value>
+                                  </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTValue_-ConstantValue>
+                                </entry>
+                              </arguments>
+                            </args>
+                          </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTScriptBlock>
+                        </children>
+                      </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTTreeStep>
+                    </steps>
+                  </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTBranch>
+                </branches>
+              </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTStage>
+            </stages>
+            <uuid>7ba74fbc-b0a6-4ce6-be5e-d4e2576d1e6d</uuid>
+          </stages>
+          <agent>
+            <variables class="org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTClosureMap">
+              <variables class="linked-hash-map">
+                <entry>
+                  <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTKey>
+                    <key>defaultContainer</key>
+                  </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTKey>
+                  <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTValue_-ConstantValue>
+                    <value class="string">manage-kafka</value>
+                  </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTValue_-ConstantValue>
+                </entry>
+                <entry>
+                  <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTKey>
+                    <key>yaml</key>
+                  </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTKey>
+                  <org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTValue_-GStringValue>
+                    <value class="string">&quot;&quot;&quot;
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    sidecar.istio.io/inject: &quot;false&quot;
+  namespace: devops
+spec:
+  serviceAccountName: kafka-consumer
+  nodeSelector:
+    role: ng-system
+  tolerations:
+    - key: &quot;dedicated&quot;
+      operator: &quot;Equal&quot;
+      value: &quot;ng-system&quot;
+      effect: &quot;NoSchedule&quot;
+  containers:
+  - command:
+    - cat
+    env:
+    - name: STAGING
+      value: &quot;1&quot;
+    - name: ENV
+      value: STAGING
+    # ES env is not necessary, added here to by pass import dependency.
+    - name: ES_HOST
+      value: es_ci
+    - name: ES_USER
+      value: random_value
+    - name: ES_PASSWORD
+      value: random_value
+    - name: ELASTICACHE_VALKEY_HOST
+      value: elasticache-valkey-cluster-staging-0001-001.elasticache-valkey-cluster-staging.nko9ov.use2.cache.amazonaws.com
+    - name: MEMORYDB_VALKEY_CELERY_HOST
+      value: memorydb-valkey-celery-staging.nko9ov.clustercfg.memorydb.us-east-2.amazonaws.com
+    - name: MEMORYDB_VALKEY_HOST
+      value: memorydb-valkey-cluster-staging.nko9ov.clustercfg.memorydb.us-east-2.amazonaws.com
+    - name: REDIS_MASTER_HOST_NAME_ELASTICACHE
+      value: master.redis-development.nko9ov.use2.cache.amazonaws.com
+    - name: REDIS_REPLICA_HOST_NAME_ELASTICACHE
+      value: replica.redis-development.nko9ov.use2.cache.amazonaws.com
+    - name: AWS_MSK_CLUSTER_ARN
+      value: arn:aws:kafka:us-east-2:242230929264:cluster/Staging2/3beea28d-2ca0-4149-b30a-6b77d7d40183-2
+    - name: prometheus_multiproc_dir
+      value: /etc/prometheus_counter_dir
+    - name: PYTHONPATH
+      value: /app/gen-py
+    image: ${env.image_name}
+    name: manage-kafka
+    resources: {}
+    tty: true
+    volumeMounts:
+    - mountPath: /etc/prometheus_counter_dir
+      name: prometheus-counter-dir
+  volumes:
+  - emptyDir: {}
+    name: prometheus-counter-dir
+      &quot;&quot;&quot;</value>
+                  </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTValue_-GStringValue>
+                </entry>
+              </variables>
+            </variables>
+            <agentType>
+              <key>kubernetes</key>
+            </agentType>
+          </agent>
+        </org.jenkinsci.plugins.pipeline.modeldefinition.ast.ModelASTPipelineDef>
+      </pipelineDefs>
+    </org.jenkinsci.plugins.pipeline.modeldefinition.actions.ExecutionModelAction>
+    <org.jenkinsci.plugins.workflow.cps.EnvActionImpl plugin="workflow-cps@3705.va_6a_c2775a_c17">
+      <env class="tree-map"/>
+    </org.jenkinsci.plugins.workflow.cps.EnvActionImpl>
+    <jenkins.metrics.impl.SubTaskTimeInQueueAction plugin="metrics@4.2.18-439.v86a_20b_a_8318b_">
+      <queuingDurationMillis>9477</queuingDurationMillis>
+      <blockedDurationMillis>0</blockedDurationMillis>
+      <buildableDurationMillis>9476</buildableDurationMillis>
+      <waitingDurationMillis>0</waitingDurationMillis>
+      <executingDurationMillis>90930</executingDurationMillis>
+      <workUnitCount>1</workUnitCount>
+    </jenkins.metrics.impl.SubTaskTimeInQueueAction>
+  </actions>
+  <queueId>257168</queueId>
+  <timestamp>1753852944521</timestamp>
+  <startTime>1753852944525</startTime>
+  <result>SUCCESS</result>
+  <duration>102910</duration>
+  <charset>UTF-8</charset>
+  <keepLog>false</keepLog>
+  <execution class="org.jenkinsci.plugins.workflow.cps.CpsFlowExecution">
+    <result>SUCCESS</result>
+    <script>pipeline {
+  agent {
+    kubernetes {
+      defaultContainer &apos;manage-kafka&apos;
+      yaml &quot;&quot;&quot;
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    sidecar.istio.io/inject: &quot;false&quot;
+  namespace: devops
+spec:
+  serviceAccountName: kafka-consumer
+  nodeSelector:
+    role: ng-system
+  tolerations:
+    - key: &quot;dedicated&quot;
+      operator: &quot;Equal&quot;
+      value: &quot;ng-system&quot;
+      effect: &quot;NoSchedule&quot;
+  containers:
+  - command:
+    - cat
+    env:
+    - name: STAGING
+      value: &quot;1&quot;
+    - name: ENV
+      value: STAGING
+    # ES env is not necessary, added here to by pass import dependency.
+    - name: ES_HOST
+      value: es_ci
+    - name: ES_USER
+      value: random_value
+    - name: ES_PASSWORD
+      value: random_value
+    - name: ELASTICACHE_VALKEY_HOST
+      value: elasticache-valkey-cluster-staging-0001-001.elasticache-valkey-cluster-staging.nko9ov.use2.cache.amazonaws.com
+    - name: MEMORYDB_VALKEY_CELERY_HOST
+      value: memorydb-valkey-celery-staging.nko9ov.clustercfg.memorydb.us-east-2.amazonaws.com
+    - name: MEMORYDB_VALKEY_HOST
+      value: memorydb-valkey-cluster-staging.nko9ov.clustercfg.memorydb.us-east-2.amazonaws.com
+    - name: REDIS_MASTER_HOST_NAME_ELASTICACHE
+      value: master.redis-development.nko9ov.use2.cache.amazonaws.com
+    - name: REDIS_REPLICA_HOST_NAME_ELASTICACHE
+      value: replica.redis-development.nko9ov.use2.cache.amazonaws.com
+    - name: AWS_MSK_CLUSTER_ARN
+      value: arn:aws:kafka:us-east-2:242230929264:cluster/Staging2/3beea28d-2ca0-4149-b30a-6b77d7d40183-2
+    - name: prometheus_multiproc_dir
+      value: /etc/prometheus_counter_dir
+    - name: PYTHONPATH
+      value: /app/gen-py
+    image: ${env.image_name}
+    name: manage-kafka
+    resources: {}
+    tty: true
+    volumeMounts:
+    - mountPath: /etc/prometheus_counter_dir
+      name: prometheus-counter-dir
+  volumes:
+  - emptyDir: {}
+    name: prometheus-counter-dir
+      &quot;&quot;&quot;
+    }
+  }
+
+  stages {
+    stage(&apos;run&apos;) {
+      steps {
+        container(&apos;manage-kafka&apos;) {
+          script {
+            sh &apos;cd /app &amp;&amp; fab kafka-sync-topics&apos;
+          }
+        }
+      }
+    }
+  }
+}
+</script>
+    <loadedScripts class="map"/>
+    <durabilityHint>MAX_SURVIVABILITY</durabilityHint>
+    <timings class="map">
+      <entry>
+        <string>flowNode</string>
+        <long>194149758</long>
+      </entry>
+      <entry>
+        <string>classLoad</string>
+        <long>53185563</long>
+      </entry>
+      <entry>
+        <string>run</string>
+        <long>957825883</long>
+      </entry>
+      <entry>
+        <string>parse</string>
+        <long>8458392</long>
+      </entry>
+      <entry>
+        <string>saveProgram</string>
+        <long>298709414</long>
+      </entry>
+    </timings>
+    <sandbox>true</sandbox>
+    <iota>37</iota>
+    <head>1:37</head>
+    <done>true</done>
+    <resumeBlocked>false</resumeBlocked>
+  </execution>
+  <completed>true</completed>
+  <checkouts class="hudson.util.PersistedList">
+    <org.jenkinsci.plugins.workflow.job.WorkflowRun_-SCMCheckout>
+      <scm class="hudson.plugins.git.GitSCM" plugin="git@5.2.0">
+        <configVersion>2</configVersion>
+        <userRemoteConfigs>
+          <hudson.plugins.git.UserRemoteConfig>
+            <url>https://ghp_xxxx@github.com/Greenbax/evergreen.git</url>
+          </hudson.plugins.git.UserRemoteConfig>
+        </userRemoteConfigs>
+        <branches>
+          <hudson.plugins.git.BranchSpec>
+            <name>origin/master</name>
+          </hudson.plugins.git.BranchSpec>
+        </branches>
+        <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+        <submoduleCfg class="empty-list"/>
+        <extensions>
+          <hudson.plugins.git.extensions.impl.GitLFSPull/>
+        </extensions>
+      </scm>
+      <node></node>
+      <workspace>/var/jenkins_home/workspace/Kafka-manage-topics-staging@script/0582d650dadf6320a1c365857dcc81165d3988200beb55116a4ea061e154ec2f</workspace>
+      <changelogFile>/var/jenkins_home/jobs/Kafka-manage-topics-staging/builds/17750/changelog13955798520860400604.xml</changelogFile>
+      <pollingBaseline class="hudson.scm.SCMRevisionState$None" reference="../../../actions/org.jenkinsci.plugins.workflow.steps.scm.MultiSCMRevisionState/revisionStates/entry/hudson.scm.SCMRevisionState_-None"/>
+    </org.jenkinsci.plugins.workflow.job.WorkflowRun_-SCMCheckout>
+    <org.jenkinsci.plugins.workflow.job.WorkflowRun_-SCMCheckout>
+      <scm class="hudson.plugins.git.GitSCM" reference="../../org.jenkinsci.plugins.workflow.job.WorkflowRun_-SCMCheckout/scm"/>
+      <node>kafka-manage-topics-staging-17750-t9mw8-g2ksj-md9rw</node>
+      <workspace>/home/jenkins/agent/workspace/Kafka-manage-topics-staging</workspace>
+      <pollingBaseline class="hudson.scm.SCMRevisionState$None" reference="../../../actions/org.jenkinsci.plugins.workflow.steps.scm.MultiSCMRevisionState/revisionStates/entry/hudson.scm.SCMRevisionState_-None"/>
+    </org.jenkinsci.plugins.workflow.job.WorkflowRun_-SCMCheckout>
+  </checkouts>
