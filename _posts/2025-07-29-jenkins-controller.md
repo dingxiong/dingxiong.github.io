@@ -133,11 +133,15 @@ node {
 ```
 
 To be honest, I do not see too many differences between the two styles, and
-more importantly, the declarative style is parsed as Groovy code as well.
+more importantly, the declarative style is parsed as AST and then transformed
+to valid Groovy code as well. So eventually, the final representation is
+Groovy.
 
-### Parsing
+### Parsing, Validation and Transformation
 
-Let's use the example build result
+The declarative style cannot run directly. Checkout the
+[dev guide](https://github.com/jenkinsci/pipeline-model-definition-plugin/blob/4e96d2bdaf9b06c5feb5ec544799e4f6c11e1056/DEV_GUIDE.md)
+for how this part works. We will use the example build result
 [build.xml](/assets/raw/jenkins_build.xml.txt) to illustrate the parsing
 process. Most parsing logic happens in
 [ModelParser.groovy](https://github.com/jenkinsci/pipeline-model-definition-plugin/blob/4e96d2bdaf9b06c5feb5ec544799e4f6c11e1056/pipeline-model-definition/src/main/groovy/org/jenkinsci/plugins/pipeline/modeldefinition/parser/ModelParser.groovy#L232-L232).
@@ -162,6 +166,8 @@ calling a function named `agent` with only one argument and this argument is a
 closure. Amazing right? Groovy is born for DSL. The last time I had the similar
 excitement was when I realized Ruby is born for DSL.
 
+A natural follow-up question is where function `kubernetes` is defined.
+
 ### EnvVar
 
 ## Extension Annotation
@@ -172,13 +178,10 @@ excitement was when I realized Ruby is born for DSL.
 
 ## Agent
 
-### Agent parser
-
 ### Pipeline execution
 
 1. It is a groovy script
-2. `agent {}` is actually a function call. It is a great disguise as a DSL.
-3. so how the functions are called? where defined? what arguments?
+2. so how the functions are called? where defined? what arguments?
 
 ```groovy
 import org.jenkinsci.plugins.pipeline.modeldefinition.agent.DeclarativeAgentDescriptor
