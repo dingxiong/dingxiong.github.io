@@ -16,7 +16,20 @@ has a clear description of PCS.
 
 1. The first few parameters should be loaded to X0-X7. If more than 8
    arguments, then the rest should be be put to stack.
-2. The return values is stored in X0, X0/X1 or X8 depending on the size of the
+2. If the parameter is composite, i.e., a struct in C, then depending on the
+   size, there are different conventions. Larger than 16 bytes, then the
+   argument is copied to memory allocated by the caller and the argument is
+   replaced by a pointer to the copy. Otherwise, rounding up to the nearest
+   multiple of 8 bytes and put them inside registers directly. The
+   [abi documentation section 6.8.2](https://github.com/ARM-software/abi-aa/blob/main/aapcs64/aapcs64.rst#parameter-passing-rules)
+   mentions the rules but as a reader, I feel the details are so fragmented.
+   Let's take a look at a few examples.
+   - `struct {int32 a, int32 b}`: a → lower 32 bits of X0, b → upper 32 bits of
+     x0
+   - `struct {int32 a, int64 b}`: X0 = [padding(upper 32 bits) | a (lower 32
+     bits)]; X1 = b. We need to put b to X1 instead of spreading it between X0
+     and X1 because int64 requires 8 bytes padding.
+3. The return values is stored in X0, X0/X1 or X8 depending on the size of the
    return value. Most functions return a single value (X0). Small structs (≤16
    bytes) can be returned using X0 and X1. If the return struct is larger than
    16 bytes. the caller will allocated some memory on stack and put the pointer
