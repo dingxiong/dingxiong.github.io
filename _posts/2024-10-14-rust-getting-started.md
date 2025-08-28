@@ -215,16 +215,3 @@ Second question is what happens exactly after the use statement is executed.
 ### Rib
 
 https://github.com/rust-lang/rust/blob/d68c32779627fcd72a928c9e89f65094dbcf7482/compiler/rustc_resolve/src/late.rs#L4481
-
-## Questions
-
-1. The default behavior of the binary produced by cargo test is to run all the
-   tests in parallel .
-2. #[cfg(test)] annotation
-3. read rg source code.
-4. What does `pub(crate) struct Logger(())` mean ? It means Logger is a struct
-   with an unnamed field whose type is an empty tuple. Basically, it means
-   Logger is a zero sized type. Tbh, it is better to simply write
-   `pub(crate) struct Logger`.
-5. The current borrow checker enforces the rule that when you borrow a path,
-   you cannot assign to that path or any prefix of that path. :)
