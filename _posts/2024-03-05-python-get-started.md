@@ -279,7 +279,15 @@ npm run webpack
 ```
 
 Note here we use `npm run webapck` instead of `npm run build` because the
-former is dev build, so it works with node debugger.
+former is dev build, so it works with node debugger. Now, you can use Pyright
+as type checker or language server
+`node pyright/langserver.index.js -- --stdio`.
+
+A few tips when testing Pyright as a language server.
+
+1. When started using `--stdio` mode, we'd better use `console.error` for
+   logging so we won't break the rpc-json protocol in `stdout`. That is easier
+   for us to write a response parser.
 
 ### uv
 
