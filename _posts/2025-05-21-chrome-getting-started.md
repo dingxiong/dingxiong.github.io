@@ -95,3 +95,8 @@ The core logic is
 HttpOnly cookie
 
 Session cookie vs permanent cookie
+
+## Cookie/session management
+
+Forbidden headers.
+[here](https://github.com/chromium/chromium/blob/a5c6b5ae0d3d55065d55acae3eda82e283d925a9/third_party/blink/renderer/core/fetch/headers.cc#L275).
