@@ -20,15 +20,15 @@ rare. `memray` is the former case. The source code is
 The whole magic is just a gdb script. This script sets a bunch of breakpoints
 at function `malloc`, `free`, `PyMem_Malloc` etc and registers a callback
 function `memray_spawn_client`. This makes total sense for a memory profiler.
-However, the trick part is the line doing `dlopen`. The two parameters are
+However, the tricky part is the line doing `dlopen`. For my case, the two
+parameters were
 
 ```
 $libpath = /usr/local/lib/python3.12/site-packages/memray/_memray.cpython-312-x86_64-linux-gnu.so
 $rtld_now = 2
 ```
 
-`2` means loading this `_memray.cpython-312-x86_64-linux-gnu.so` shared lib
-immediately.
+`2` means loading `_memray.cpython-312-x86_64-linux-gnu.so` immediately.
 
 If `dlopen` succeeds, it should return a valid handler pointer, but what I got
 was always `0x0`. I tried to add `dlerror()` after that line to see what error
@@ -38,19 +38,20 @@ Is the problem with `_memray.cpython-312-x86_64-linux-gnu.so` itself? Chatgpt
 told me to verify it by running below script.
 
 ```
-gdb -p $CID -batch \
+gdb -p $PID -batch \
   -ex 'set unwindonsignal off' \
   -ex 'set $r = (void*) dlopen("libm.so.6", 2)' \
   -ex 'printf "dlopen -> %p\n", $r' \
   -ex quit
 ```
 
-Fine. Int printed `dlopne -> null`. It does not work for any shared library.
-Maybe the problem is at OS level? Chatgpt quickly generated a simple C program
-to call `dlopne("libm.so.6", 2)`. It ran without problem, so the problem is
-with this specific `$CID` process. I had a few other hypothesis, but none of
-them turned out to be the root cause. Then I casually read the memory maps of
-this process, and found below mappings.
+Fine. It printed `dlopne -> null`. What? It did not work for any shared
+library. Maybe the problem was at OS level? Chatgpt quickly generated a simple
+C program to call `dlopne("libm.so.6", 2)`. It ran without problem, so the
+problem was with this specific `$PID` process. I had a few other hypothesis,
+but none of them turned out to be the root cause. Then I casually read the
+memory maps of this process. It was a long list! I lost my patience and threw
+all of them to Chatgpt, and Chatgpt highlighted a few suspicious mappings.
 
 ```
 0x7f75d0bed000     0x7f75d0bee000     0x1000        0x0  r--p   /usr/lib/x86_64-linux-gnu/libdl.so.2 (deleted)
@@ -60,36 +61,38 @@ this process, and found below mappings.
 0x7f75d0bf1000     0x7f75d0bf2000     0x1000     0x3000  rw-p   /usr/lib/x86_64-linux-gnu/libdl.so.2 (deleted)
 ```
 
-not just `libdl` but also `libm.so` and a few other shared libs. Nice! This
+Not just `libdl` but also `libm.so` and a few other shared libs. Nice! This
 must be related because I did not see `(deleted)` on my local host.
 
 `(deleted)` means the file was deleted, but its content was still used by the
-process and existing in memory. Think about `mmap` and then deleting the
-physical file. I checked the file path, it did exist in disk. It was not
-deleted. I expressed my confusion to Chatgpt, and it told me that the shared
-lib might be upgraded, and the file path kept unchanged. Chatgpt said I might
-have upgraded `libc`. I was very suspicious about this answer because it was
-not the first time Chatgpt lied to me.
+process and it exits in memory. Think about `mmap` and then deleting the
+physical file. I checked the file path, it did exist in disk. I expressed my
+confusion to Chatgpt, and it told me that the shared lib might be upgraded with
+the file path kept unchanged. Chatgpt said I might have upgraded `libc`. I was
+very suspicious about this answer because it was not the first time Chatgpt
+lied to me.
 
-I took a break for two hours because my daughter would not sleep if I do not
-sleep. So I closed my eyes lying on the bed and thought about what I had done
-after logging into this machine. I did `apt-get install procps` because I want
-to use `ps`, then did `apt-get installl gdb` and `uv pip install memray` and
-`apt-get install neovim` because I want to write some C code to test my
-hypothesis. Nothing I could think of to be related to `libc` or `ld`.
+I took a break for two hours because my daughter would not sleep if I did not
+sleep at the same time. I closed my eyes lying on the bed and thought about
+what I had done after logging into this machine. I did `apt-get install procps`
+because I wanted to use `ps`, then did `apt-get installl gdb` and
+`uv pip install memray` and `apt-get install neovim` because I wanted to write
+some C code to test my hypothesis. Nothing I could think of to be related to
+`libc` or `ld`.
 
 Wait a minute! `apt-get install gdb`! I found my daughter was already asleep,
 and I went to my laptop, logged into another similar production box, and type
 `apt-get install --simulate gdb`. It actually automatically upgrades `glibc`!
-Holy shit. I quickly compile `gdb` from source, and then ran
+Holy shit. I quickly compiled `gdb` from source, and then ran
 `memray attach <pid>`. And it worked!
 
-That was the full story. I know this isn't significant at all in my people's
+This is the full story. I know this isn't significant at all in many people's
 view. We are never short of gotchas in the Linux world. But I kind of feel this
 is a good lesson for me. I started to appreciate the difficulty of problems
-that Arch Linux faces. It is not easy for long-running servers. Meanwhile,
-there still some puzzle I do not fully resolve. `(delete)` means file
-deleted/updated on the disk, but still memory has it, so it should continue to
-work, but why `gdb` must rely on physical existence. Maybe take a step, I could
-not find any manual/documentation discusses this gotcha. `gdb` relying on
-physical existence is just my guess/observation!
+that Arch Linux faces. It is not easy to do rolling upgrade for long-running
+servers. Meanwhile, there is still some puzzle I do not fully resolve.
+`(delete)` means file was deleted/updated on the disk, but still memory has it,
+so in principle, it should continue to work, but why `gdb` must need the
+physical existence. Moreover, I could not find any manual/documentation
+discussing this gotcha. `gdb` relying on physical existence is just my
+guess/observation!
