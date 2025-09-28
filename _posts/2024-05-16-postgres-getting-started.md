@@ -86,6 +86,10 @@ make install
 mkdir data
 ./install_dir/bin/initdb -D $HOME/code/postgres/build_dir/data
 
+# initdb auto creates a superuser with the current os user without a password.
+# You can give it a password if you need to test client libraries.
+postgres=# ALTER USER xiongding PASSWORD 'password';
+
 # start server using a different port
 ./install_dir/bin/postgres -D $HOME/code/postgres/build_dir/data -p 5433
 
