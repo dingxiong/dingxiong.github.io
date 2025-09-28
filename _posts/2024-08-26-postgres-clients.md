@@ -129,6 +129,37 @@ call?
 This blocking design has a big impact on the timeout behavior. See the blog
 post about Postgres signals.
 
+## ClientRead
+
+I see ClientRead accounts for 90% of db wait type. What is that? The place that
+set this wait type is
+[here](https://github.com/postgres/postgres/blob/3f9b9621766796983c37e192f73c5f8751872c18/src/backend/libpq/be-secure.c#L218).
+A typical call stack is
+
+```
+1   postgres                            0x0000000104ab3034 pq_recvbuf + 16
+2   postgres                            0x0000000104ab360c pq_getbytes + 124
+3   postgres                            0x0000000104ab3b50 pq_getmessage + 784
+4   postgres                            0x0000000104d43cf8 SocketBackend + 832
+5   postgres                            0x0000000104d40650 ReadCommand + 44
+6   postgres                            0x0000000104d3fbe0 PostgresMain + 2452
+7   postgres                            0x0000000104d37634 BackendInitialize + 0
+8   postgres                            0x0000000104c218c0 postmaster_child_launch + 324
+9   postgres                            0x0000000104c28da0 BackendStartup + 296
+10  postgres                            0x0000000104c26de4 ServerLoop + 372
+11  postgres                            0x0000000104c25ba0 PostmasterMain + 6304
+12  postgres                            0x0000000104ab78d4 main + 904
+13  dyld                                0x0000000187205d54 start + 7184
+```
+
+It happens when server is waiting for client to send more data. Remember that
+each message has 5 bytes header: 1 byte for type + 4 bytes for message length.
+So, after decoding the header, postgres waits for the full message before it
+can execute it. The period is call ClientRead.
+
+If ClientRead is high, then it means client side is busy with sending the full
+query. Does the network needs more bandwidth, or is the query too long?
+
 ## Pgbouncer
 
 Compilation
@@ -241,7 +272,7 @@ A sample stack trace captured is shown below.
 
 ### FAQ
 
-#### Does Pgbouncer wait complete message before sending to server?
+#### Does pgbouncer buffer the complete query before sending to server?
 
 Yes for prepared statement but no for for simple queries.
 
