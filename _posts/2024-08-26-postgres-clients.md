@@ -186,6 +186,10 @@ auth_file = userlist.txt
 logfile = pgbouncer.log
 pidfile = pgbouncer.pid
 admin_users = xiongding
+pool_mode=transaction
+max_client_conn=10000
+max_db_connections=1000
+default_pool_size=100
 
 # file userlist.txt
 "xiongding" "password"
