@@ -152,13 +152,24 @@ A typical call stack is
 13  dyld                                0x0000000187205d54 start + 7184
 ```
 
-It happens when server is waiting for client to send more data. Remember that
-each message has 5 bytes header: 1 byte for type + 4 bytes for message length.
-So, after decoding the header, postgres waits for the full message before it
-can execute it. The period is call ClientRead.
+It happens when server is waiting for client to send more data. In what cases
+will server wait for more data from client?
 
-If ClientRead is high, then it means client side is busy with sending the full
-query. Does the network needs more bandwidth, or is the query too long?
+1. Connection is newly created or server just finishes serving one query. Then
+   connection becomes `state=idle or idle_in_transaction` and
+   `wait_event=ClientRead`.
+2. Server receives partial message. Remember that each message has 5 bytes
+   header: 1 byte for type + 4 bytes for message length. So, after decoding the
+   header, postgres waits for the full message before it can execute it. For
+   this case, `state=active` and `wait_event=ClientRead`
+3. In extended query protocol, namely, prepared statements, client communicates
+   to server through a sequence of messages: Parse, Bind, Execute, Sync, and
+   optional Describe and Flush. Only command `Sync` put the connection into
+   `idle`. The rest will keep server at `active` state. So you can see
+   `state=active` and `wait_event=ClientRead`. This case can be easily
+   neglected. Because it is the same state as case 2. And most time, people
+   assume it is case 2 when an active connection is blocked by ClientRead. See
+   [asyncpg ticket](https://github.com/MagicStack/asyncpg/issues/1276).
 
 ## Pgbouncer
 
