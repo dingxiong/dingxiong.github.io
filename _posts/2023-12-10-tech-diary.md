@@ -7,6 +7,30 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2025-10-05
+
+I am lazy. Finally, I spent some time making comments work for my tech blog. It
+uses <https://giscus.app/>.
+
+```js
+<script
+  src="https://giscus.app/client.js"
+  data-repo="dingxiong/dingxiong.github.io"
+  data-repo-id="R_kgDOKyBryw"
+  data-category="General"
+  data-category-id="DIC_kwDOKyBry84CwROA"
+  data-mapping="pathname"
+  data-strict="0"
+  data-reactions-enabled="1"
+  data-emit-metadata="0"
+  data-input-position="bottom"
+  data-theme="preferred_color_scheme"
+  data-lang="en"
+  crossorigin="anonymous"
+  async
+></script>
+```
+
 ## 2025-06-01
 
 From "F. E. Allen. Control flow analysis. SIGPLAN Notices, 5(7):1–19,

@@ -88,11 +88,9 @@ Holy shit. I quickly compiled `gdb` from source, and then ran
 
 This is the full story. I know this isn't significant at all in many people's
 view. We are never short of gotchas in the Linux world. But I kind of feel this
-is a good lesson for me. I started to appreciate the difficulty of problems
-that Arch Linux faces. It is not easy to do rolling upgrade for long-running
-servers. Meanwhile, there is still some puzzle I do not fully resolve.
-`(delete)` means file was deleted/updated on the disk, but still memory has it,
-so in principle, it should continue to work, but why `gdb` must need the
-physical existence. Moreover, I could not find any manual/documentation
-discussing this gotcha. `gdb` relying on physical existence is just my
-guess/observation!
+is a good lesson for me. Meanwhile, there is still some puzzle I do not fully
+resolve. `(delete)` means file was deleted/updated on the disk, but still
+memory has it, so in principle, it should continue to work, but why `gdb` must
+need the physical existence. Moreover, I could not find any
+manual/documentation discussing this gotcha. `gdb` relying on physical
+existence is just my guess/observation!
