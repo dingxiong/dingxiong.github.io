@@ -7,6 +7,13 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2025-10-12
+
+Russ Cox's [3 posts](https://research.swtch.com/mm) on memory order is so
+helpful! Now at least I can tell some difference between all the different
+types of memory orders in
+[C/C++](https://en.cppreference.com/w/c/atomic/memory_order.html).
+
 ## 2025-10-05
 
 I am lazy. Finally, I spent some time making comments work for my tech blog. It
