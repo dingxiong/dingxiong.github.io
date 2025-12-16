@@ -7,6 +7,12 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2025-12-16 Tue
+
+Today I learned that switching a github repo from public to private will nuke
+all github page settings. Publishing github pages using a private repo is a
+enterprise feature. What the hell!
+
 ## 2025-10-12
 
 Russ Cox's [3 posts](https://research.swtch.com/mm) on memory order is so
