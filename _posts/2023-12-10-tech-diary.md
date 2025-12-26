@@ -7,6 +7,11 @@ tags: [diary]
 
 Some random thoughts or learnings.
 
+## 2025-12-26 Fri
+
+Recently, I learned a new term
+[Outbox Pattern](https://www.decodable.co/blog/revisiting-the-outbox-pattern).
+
 ## 2025-12-16 Tue
 
 Today I learned that switching a github repo from public to private will nuke
